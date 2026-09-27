@@ -2,3 +2,6 @@ dotenv
 langgraph
 pytest
 ruff
+pandas
+stockstats
+yfinance

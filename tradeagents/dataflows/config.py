@@ -42,3 +42,9 @@ def get_config() -> dict:
     initialize_config()
     assert _config is not None
     return deepcopy(_config)
+
+def reset_config() -> None:
+    """Discard all overrides and rebuild from DEFAULT_CONFIG."""
+    global _config
+    _config = None
+    initialize_config()
