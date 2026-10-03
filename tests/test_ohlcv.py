@@ -1,6 +1,6 @@
 import pytest
 
-from tradeagents.dataflows.symbols import normalize_symbol
+from tradeagents.dataflows.errors import NoMarketDataError
 from tradeagents.dataflows.vendors.yahoo import ohlcv
 
 
@@ -22,7 +22,7 @@ def test_assert_ohlcv_not_stale_rejects_old_frame():
     import pandas as pd
 
     df = pd.DataFrame({"Date": ["2020-01-02"], "Close": [100.0]})
-    with pytest.raises(Exception):  # NoMarketDataError, kept loose on purpose
+    with pytest.raises(NoMarketDataError):
         ohlcv._assert_ohlcv_not_stale(df, "2026-09-01", "AAPL", "AAPL")
 
 

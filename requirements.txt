@@ -5,3 +5,4 @@ ruff
 pandas
 stockstats
 yfinance
+langchain-openai

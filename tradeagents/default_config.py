@@ -81,7 +81,7 @@ DEFAULT_CONFIG = _apply_env_overrides(
         "output_language": "English",
         "max_debate_rounds": 1,
         "max_risk_discuss_rounds": 1,
-        "max_recur_limit": 100,
+        "max_recur_limit": 100, # The maximum recursion depth for the analyst graph. This is a safety limit to prevent infinite loops in the graph.
         # Vendors: category-level defaults. Populated as vendors land in Phase 2+.
         "data_vendors": {
             "core_stock_apis": "yfinance",

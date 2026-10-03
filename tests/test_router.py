@@ -1,10 +1,9 @@
 import pytest
 
 from tradeagents.dataflows import router
-from tradeagents.dataflows.config import set_config, reset_config
+from tradeagents.dataflows.config import reset_config, set_config
 from tradeagents.dataflows.errors import (
     NoMarketDataError,
-    VendorNotConfiguredError,
     VendorRateLimitError,
 )
 
