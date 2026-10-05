@@ -31,9 +31,19 @@ from tradeagents.dataflows.errors import (
     VendorNotConfiguredError,
     VendorRateLimitError,
 )
+from tradeagents.dataflows.vendors.yahoo.fundamentals import (
+    get_balance_sheet as get_yfinance_balance_sheet,
+    get_cashflow as get_yfinance_cashflow,
+    get_fundamentals as get_yfinance_fundamentals,
+    get_income_statement as get_yfinance_income_statement,
+)
 from tradeagents.dataflows.vendors.yahoo.market import (
     get_stock_data as get_yfinance_stock_data,
     get_stock_stats_indicators_window as get_yfinance_indicators,
+)
+from tradeagents.dataflows.vendors.yahoo.news import (
+    get_global_news as get_yfinance_global_news,
+    get_news as get_yfinance_news,
 )
 
 logger = logging.getLogger(__name__)
@@ -50,6 +60,19 @@ TOOLS_CATEGORIES = {
         "description": "Technical analysis indicators",
         "tools": ["get_indicators"],
     },
+    "fundamental_data": {
+        "description": "Company fundamentals",
+        "tools": [
+            "get_fundamentals",
+            "get_balance_sheet",
+            "get_cashflow",
+            "get_income_statement",
+        ],
+    },
+    "news_data": {
+        "description": "News and macro",
+        "tools": ["get_news", "get_global_news"],
+    },
 }
 
 
@@ -58,6 +81,12 @@ TOOLS_CATEGORIES = {
 VENDOR_METHODS: dict[str, dict[str, Callable[..., Any]]] = {
     "get_stock_data": {"yfinance": get_yfinance_stock_data},
     "get_indicators": {"yfinance": get_yfinance_indicators},
+    "get_fundamentals": {"yfinance": get_yfinance_fundamentals},
+    "get_balance_sheet": {"yfinance": get_yfinance_balance_sheet},
+    "get_cashflow": {"yfinance": get_yfinance_cashflow},
+    "get_income_statement": {"yfinance": get_yfinance_income_statement},
+    "get_news": {"yfinance": get_yfinance_news},
+    "get_global_news": {"yfinance": get_yfinance_global_news},
 }
 
 

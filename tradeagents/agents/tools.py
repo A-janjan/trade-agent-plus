@@ -49,3 +49,78 @@ def get_indicators(
     return route_to_vendor(
         "get_indicators", symbol, indicator, curr_date, look_back_days
     )
+
+
+@tool
+def get_fundamentals(
+    ticker: Annotated[str, "Ticker symbol"],
+    curr_date: Annotated[str, "Analysis date YYYY-MM-DD"],
+    trade_date: Annotated[str, InjectedState("trade_date")] = "",
+) -> str:
+    """Company overview: profile, valuation multiples, margins, key financials."""
+    return route_to_vendor("get_fundamentals", ticker, as_of(curr_date, trade_date))
+
+
+@tool
+def get_balance_sheet(
+    ticker: Annotated[str, "Ticker symbol"],
+    freq: Annotated[str, "quarterly or annual"] = "quarterly",
+    curr_date: Annotated[str, "Analysis date YYYY-MM-DD"] = "",
+    trade_date: Annotated[str, InjectedState("trade_date")] = "",
+) -> str:
+    """Balance sheet for the most recent periods on or before the analysis date."""
+    return route_to_vendor(
+        "get_balance_sheet", ticker, freq, as_of(curr_date, trade_date)
+    )
+
+
+@tool
+def get_cashflow(
+    ticker: Annotated[str, "Ticker symbol"],
+    freq: Annotated[str, "quarterly or annual"] = "quarterly",
+    curr_date: Annotated[str, "Analysis date YYYY-MM-DD"] = "",
+    trade_date: Annotated[str, InjectedState("trade_date")] = "",
+) -> str:
+    """Cash flow statement for the most recent periods on or before the analysis date."""
+    return route_to_vendor("get_cashflow", ticker, freq, as_of(curr_date, trade_date))
+
+
+@tool
+def get_income_statement(
+    ticker: Annotated[str, "Ticker symbol"],
+    freq: Annotated[str, "quarterly or annual"] = "quarterly",
+    curr_date: Annotated[str, "Analysis date YYYY-MM-DD"] = "",
+    trade_date: Annotated[str, InjectedState("trade_date")] = "",
+) -> str:
+    """Income statement for the most recent periods on or before the analysis date."""
+    return route_to_vendor(
+        "get_income_statement", ticker, freq, as_of(curr_date, trade_date)
+    )
+
+
+@tool
+def get_news(
+    ticker: Annotated[str, "Ticker symbol"],
+    start_date: Annotated[str, "Start date YYYY-MM-DD"],
+    end_date: Annotated[str, "End date YYYY-MM-DD"],
+    trade_date: Annotated[str, InjectedState("trade_date")] = "",
+) -> str:
+    """Ticker-specific news within the given window."""
+    return route_to_vendor(
+        "get_news",
+        ticker,
+        as_of(start_date, trade_date) or start_date,
+        as_of(end_date, trade_date) or end_date,
+    )
+
+
+@tool
+def get_global_news(
+    curr_date: Annotated[str, "Analysis date YYYY-MM-DD"],
+    look_back_days: Annotated[int, "Trailing window in days"] = 7,
+    trade_date: Annotated[str, InjectedState("trade_date")] = "",
+) -> str:
+    """Broad macro news from configured search queries within the trailing window."""
+    return route_to_vendor(
+        "get_global_news", as_of(curr_date, trade_date) or curr_date, look_back_days
+    )

@@ -81,7 +81,7 @@ DEFAULT_CONFIG = _apply_env_overrides(
         "output_language": "English",
         "max_debate_rounds": 1,
         "max_risk_discuss_rounds": 1,
-        "max_recur_limit": 100, # The maximum recursion depth for the analyst graph. This is a safety limit to prevent infinite loops in the graph.
+        "max_recur_limit": 100,  # The maximum recursion depth for the analyst graph. This is a safety limit to prevent infinite loops in the graph.
         # Vendors: category-level defaults. Populated as vendors land in Phase 2+.
         "data_vendors": {
             "core_stock_apis": "yfinance",
@@ -91,5 +91,16 @@ DEFAULT_CONFIG = _apply_env_overrides(
         },
         # Tool-level overrides take precedence over category-level.
         "tool_vendors": {},
+        # News and macro
+        "news_article_limit": 20,
+        "global_news_article_limit": 10,
+        "global_news_lookback_days": 7,
+        "global_news_queries": [
+            "Federal Reserve interest rates inflation",
+            "S&P 500 earnings GDP economic outlook",
+            "geopolitical risk trade war sanctions",
+            "ECB Bank of England BOJ central bank policy",
+            "oil commodities supply chain energy",
+        ],
     }
 )

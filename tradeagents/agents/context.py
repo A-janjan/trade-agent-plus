@@ -6,6 +6,7 @@ import functools
 import logging
 
 import yfinance as yf
+from langchain_core.messages import HumanMessage, RemoveMessage
 
 from tradeagents.dataflows.config import get_config
 from tradeagents.dataflows.date_window import get_current_date
@@ -101,3 +102,42 @@ def build_instrument_context(
             "company fundamentals."
         )
     return " ".join(parts)
+
+
+def report_or_absent(text: str, source: str) -> str:
+    """An analyst's report, or a marker saying it was never produced.
+
+    A report is empty when its analyst was not selected or returned nothing.
+    Interpolating that into a labelled section presents an absence as a blank
+    finding, and the reading agent fills it in from nothing — the same way an
+    empty opponent argument invites an invented rebuttal.
+    """
+    text = (text or "").strip()
+    if text:
+        return text
+    return (
+        f"(No {source} report in this run: it is not available, not an empty finding.)"
+    )
+
+
+def create_msg_delete():
+    """Factory for a node that clears messages and re-anchors the next analyst.
+
+    The placeholder must not be a bare ``"Continue"``: some OpenAI-compatible
+    providers interpret that literally as the user task. Anchoring it to the
+    instrument context and date keeps the next analyst on-task.
+    """
+
+    def delete_messages(state):
+        removals = [RemoveMessage(id=m.id) for m in state["messages"]]
+        instrument_context = state.get("instrument_context", "")
+        trade_date = state.get("trade_date", "the requested date")
+        placeholder = HumanMessage(
+            content=(
+                f"Proceed with your assigned analysis. {instrument_context} "
+                f"The analysis date is {trade_date}."
+            )
+        )
+        return {"messages": removals + [placeholder]}
+
+    return delete_messages
