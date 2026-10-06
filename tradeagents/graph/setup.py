@@ -1,9 +1,8 @@
 """Graph construction.
 
-An analyst registry maps a short name to its node factory, its tools, and the
-node names it will occupy. Adding an analyst is a registry entry; the graph
-builder itself does not change. Between analysts, a clear node wipes the
-message list so the next analyst sees only a fresh, context-anchored prompt.
+Two registries — analysts and debate participants — plus a shared router for
+each debate. Adding an analyst is a registry entry; adding a debate is a
+router. The graph builder itself is orchestration only.
 """
 
 from __future__ import annotations
@@ -25,6 +24,8 @@ from tradeagents.agents.analysts.news_analyst import (
 )
 from tradeagents.agents.analysts.sentiment_analyst import create_sentiment_analyst
 from tradeagents.agents.context import create_msg_delete
+from tradeagents.agents.researchers.debate import create_debate_participant
+from tradeagents.agents.researchers.lead import create_investment_lead
 from tradeagents.agents.state import AgentState
 
 ANALYST_REGISTRY: dict[str, dict] = {
@@ -58,11 +59,12 @@ ANALYST_REGISTRY: dict[str, dict] = {
     },
 }
 
+# Ordered participants for the research debate.
+RESEARCH_DEBATE_PARTICIPANTS = ["upside", "downside"]
+RESEARCH_DEBATE_NODES = {"upside": "Upside Case", "downside": "Downside Case"}
+
 
 def _route_after_analyst(spec: dict):
-    """Route to the tools node while the analyst still has pending tool calls,
-    else to its clear node."""
-
     def route(state: AgentState) -> str:
         last = state["messages"][-1]
         if spec["tools"] and getattr(last, "tool_calls", None):
@@ -72,8 +74,32 @@ def _route_after_analyst(spec: dict):
     return route
 
 
-def build_graph(selected_analysts, quick_llm, deep_llm=None):
-    """Build the analyst chain with per-analyst clear nodes between them."""
+def _route_debate(
+    state: AgentState, participants: list[str], state_key: str, limit_node: str
+):
+    """Route to the next participant, or to the judge when rounds are exhausted."""
+    debate = state[state_key]
+    transcript = debate["transcript"]
+    if len(transcript) >= len(participants) * debate["max_rounds"]:
+        return limit_node
+    if not transcript:
+        return (
+            RESEARCH_DEBATE_NODES[participants[0]]
+            if state_key == "research_debate"
+            else participants[0]
+        )
+    last_speaker = transcript[-1]["speaker"]
+    idx = participants.index(last_speaker)
+    next_speaker = participants[(idx + 1) % len(participants)]
+    return (
+        RESEARCH_DEBATE_NODES[next_speaker]
+        if state_key == "research_debate"
+        else next_speaker
+    )
+
+
+def build_graph(selected_analysts, quick_llm, deep_llm):
+    """Build the full pipeline: analysts, then research debate, then verdict."""
     specs: list[dict] = []
     for name in selected_analysts:
         if name not in ANALYST_REGISTRY:
@@ -86,16 +112,32 @@ def build_graph(selected_analysts, quick_llm, deep_llm=None):
 
     workflow = StateGraph(AgentState)
 
+    # Analysts
     for spec in specs:
         workflow.add_node(spec["node"], spec["factory"](quick_llm))
         workflow.add_node(spec["clear_node"], create_msg_delete())
         if spec["tools"]:
             workflow.add_node(spec["tools_node"], ToolNode(list(spec["tools"])))
 
-    workflow.add_edge(START, specs[0]["node"])
+    # Research debate
+    workflow.add_node(
+        "Upside Case",
+        create_debate_participant(
+            quick_llm, "upside_case", "upside", RESEARCH_DEBATE_PARTICIPANTS
+        ),
+    )
+    workflow.add_node(
+        "Downside Case",
+        create_debate_participant(
+            quick_llm, "downside_case", "downside", RESEARCH_DEBATE_PARTICIPANTS
+        ),
+    )
+    workflow.add_node("Investment Lead", create_investment_lead(deep_llm))
 
+    # Edges: analyst chain
+    workflow.add_edge(START, specs[0]["node"])
     for i, spec in enumerate(specs):
-        next_node = specs[i + 1]["node"] if i + 1 < len(specs) else END
+        next_node = specs[i + 1]["node"] if i + 1 < len(specs) else "Upside Case"
         if spec["tools"]:
             workflow.add_conditional_edges(
                 spec["node"],
@@ -106,5 +148,25 @@ def build_graph(selected_analysts, quick_llm, deep_llm=None):
         else:
             workflow.add_edge(spec["node"], spec["clear_node"])
         workflow.add_edge(spec["clear_node"], next_node)
+
+    # Edges: research debate
+    debate_choices = [
+        RESEARCH_DEBATE_NODES[p] for p in RESEARCH_DEBATE_PARTICIPANTS
+    ] + ["Investment Lead"]
+    workflow.add_conditional_edges(
+        "Upside Case",
+        lambda s: _route_debate(
+            s, RESEARCH_DEBATE_PARTICIPANTS, "research_debate", "Investment Lead"
+        ),
+        debate_choices,
+    )
+    workflow.add_conditional_edges(
+        "Downside Case",
+        lambda s: _route_debate(
+            s, RESEARCH_DEBATE_PARTICIPANTS, "research_debate", "Investment Lead"
+        ),
+        debate_choices,
+    )
+    workflow.add_edge("Investment Lead", END)
 
     return workflow

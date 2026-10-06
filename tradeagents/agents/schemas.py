@@ -74,3 +74,61 @@ def render_sentiment_report(report: SentimentReport) -> str:
             report.narrative,
         ]
     )
+
+
+class Stance(StrEnum):
+    """Five-tier investment stance used by the research debate's verdict."""
+
+    STRONG_BUY = "Strong Buy"
+    BUY = "Buy"
+    HOLD = "Hold"
+    SELL = "Sell"
+    STRONG_SELL = "Strong Sell"
+
+
+class InvestmentPlan(BaseModel):
+    """The Investment Lead's synthesized verdict and rationale."""
+
+    stance: Stance = Field(
+        description=(
+            "Exactly one of Strong Buy / Buy / Hold / Sell / Strong Sell. "
+            "The debate will contain conflicts; deciding which side is "
+            "stronger is your job, so conflict alone is not a reason to Hold."
+        ),
+    )
+    thesis: str = Field(
+        description=(
+            "Two to three paragraphs anchoring the stance in specific "
+            "evidence from the debate and the analyst reports."
+        ),
+    )
+    key_risks: list[str] = Field(
+        description="Three to five concrete risks to the stance.",
+    )
+    catalysts: list[str] = Field(
+        description="Two to four near-term events or developments to watch.",
+    )
+    conviction: Literal["low", "medium", "high"] = Field(
+        description="How decisively the evidence supports the stance.",
+    )
+
+
+def render_investment_plan(plan: InvestmentPlan) -> str:
+    """Render an InvestmentPlan to the markdown shape the rest of the system consumes."""
+    risks = "\n".join(f"- {r}" for r in plan.key_risks) or "- none stated"
+    catalysts = "\n".join(f"- {c}" for c in plan.catalysts) or "- none stated"
+    return "\n".join(
+        [
+            f"**Stance**: {plan.stance.value}",
+            f"**Conviction**: {plan.conviction.capitalize()}",
+            "",
+            "**Thesis**",
+            plan.thesis,
+            "",
+            "**Key risks**",
+            risks,
+            "",
+            "**Catalysts**",
+            catalysts,
+        ]
+    )

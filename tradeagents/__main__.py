@@ -34,7 +34,7 @@ def main() -> int:
         config=DEFAULT_CONFIG.copy(),
         debug=debug,
     )
-    final, _ = graph.propagate(ticker, trade_date)
+    final, plan = graph.propagate(ticker, trade_date)
     for key in (
         "market_report",
         "sentiment_report",
@@ -45,6 +45,8 @@ def main() -> int:
         if report:
             print(f"\n===== {key} =====\n")
             print(report)
+    if plan:
+        print(f"\n===== investment_plan =====\n\n{plan}")
     return 0
 
 

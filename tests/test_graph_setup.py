@@ -15,7 +15,7 @@ class _NoOpLLM:
 
 @pytest.mark.unit
 def test_graph_compiles_with_market_analyst():
-    workflow = build_graph(("market",), _NoOpLLM())
+    workflow = build_graph(("market",), _NoOpLLM(), _NoOpLLM())
     compiled = workflow.compile()
     assert compiled is not None
 
@@ -23,10 +23,10 @@ def test_graph_compiles_with_market_analyst():
 @pytest.mark.unit
 def test_graph_rejects_unknown_analyst():
     with pytest.raises(ValueError, match="Unknown analyst"):
-        build_graph(("fundamentals_x",), _NoOpLLM())
+        build_graph(("fundamentals_x",), _NoOpLLM(), _NoOpLLM())
 
 
 @pytest.mark.unit
 def test_graph_rejects_empty_selection():
     with pytest.raises(ValueError, match="At least one analyst"):
-        build_graph((), _NoOpLLM())
+        build_graph((), _NoOpLLM(), _NoOpLLM())

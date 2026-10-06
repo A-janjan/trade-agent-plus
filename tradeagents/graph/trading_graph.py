@@ -10,7 +10,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 
 from tradeagents.agents.context import build_instrument_context
-from tradeagents.agents.state import AgentState, InvestDebateState, RiskDebateState
+from tradeagents.agents.state import AgentState
 from tradeagents.dataflows.date_window import get_current_date
 from tradeagents.default_config import DEFAULT_CONFIG
 from tradeagents.graph.setup import build_graph
@@ -51,12 +51,10 @@ class TradingGraph:
         self.debug = debug
 
         self.quick_llm = create_llm(self.config, "quick")
-        # The deep LLM is not needed until future Phases; build it lazily so a
-        # run needs only the quick model's key.
-        self._deep_llm = None
+        self.deep_llm = create_llm(self.config, "deep")
 
         self.workflow = build_graph(
-            self.selected_analysts, self.quick_llm, self._deep_llm
+            self.selected_analysts, self.quick_llm, self.deep_llm
         )
         self.graph = self.workflow.compile()
 
@@ -69,8 +67,8 @@ class TradingGraph:
     ) -> tuple[dict, str]:
         """Run the analyst graph once.
 
-        Returns ``(final_state, market_report)``. The market report is also
-        available as ``final_state["market_report"]``; the tuple is convenience.
+        Returns ``(final_state, investment_plan)``. The market report is also
+        available as ``final_state["investment_plan"]``; the tuple is convenience.
         """
         trade_date = _validate_trade_date(trade_date)
         state = self._initial_state(ticker, trade_date, asset_type, portfolio)
@@ -87,7 +85,7 @@ class TradingGraph:
             return final, final.get("market_report", "")
 
         final: dict[str, Any] = self.graph.invoke(state, config=cfg)
-        return final, final.get("market_report", "")
+        return final, final.get("investment_plan", "")
 
     def _initial_state(
         self,
@@ -119,31 +117,17 @@ class TradingGraph:
             "sentiment_report": "",
             "news_report": "",
             "fundamentals_report": "",
-            "investment_debate_state": InvestDebateState(
-                {
-                    "bull_history": "",
-                    "bear_history": "",
-                    "history": "",
-                    "current_response": "",
-                    "judge_decision": "",
-                    "count": 0,
-                }
-            ),
+            "research_debate": {
+                "transcript": [],
+                "max_rounds": self.config["max_debate_rounds"],
+                "verdict": "",
+            },
+            "risk_debate": {
+                "transcript": [],
+                "max_rounds": self.config["max_risk_discuss_rounds"],
+                "verdict": "",
+            },
             "investment_plan": "",
             "trader_investment_plan": "",
-            "risk_debate_state": RiskDebateState(
-                {
-                    "aggressive_history": "",
-                    "conservative_history": "",
-                    "neutral_history": "",
-                    "history": "",
-                    "latest_speaker": "",
-                    "current_aggressive_response": "",
-                    "current_conservative_response": "",
-                    "current_neutral_response": "",
-                    "judge_decision": "",
-                    "count": 0,
-                }
-            ),
             "final_trade_decision": "",
         }

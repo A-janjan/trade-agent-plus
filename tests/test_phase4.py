@@ -81,7 +81,7 @@ def test_create_msg_delete_removes_all_and_adds_placeholder():
 @pytest.mark.unit
 def test_graph_compiles_with_all_analysts():
     llm = StubLLM([AIMessage(content="report")] * 10)
-    wf = build_graph(("market", "social", "news", "fundamentals"), llm)
+    wf = build_graph(("market", "social", "news", "fundamentals"), llm, llm)
     assert wf.compile() is not None
 
 
@@ -89,4 +89,4 @@ def test_graph_compiles_with_all_analysts():
 def test_graph_rejects_unknown_analyst():
     llm = StubLLM([])
     with pytest.raises(ValueError, match="Unknown analyst"):
-        build_graph(("not_a_real_analyst",), llm)
+        build_graph(("not_a_real_analyst",), llm, llm)
