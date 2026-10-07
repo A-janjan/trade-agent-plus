@@ -13,8 +13,10 @@ from tradeagents.agents.context import build_instrument_context
 from tradeagents.agents.state import AgentState
 from tradeagents.dataflows.date_window import get_current_date
 from tradeagents.default_config import DEFAULT_CONFIG
+from tradeagents.graph.progress import ProgressDisplay, stream_graph
 from tradeagents.graph.setup import build_graph
 from tradeagents.llm_clients import create_llm
+from tradeagents.observability import build_callbacks, trace_metadata
 from tradeagents.portfolio import PortfolioContext
 
 logger = logging.getLogger(__name__)
@@ -50,13 +52,47 @@ class TradingGraph:
         self.selected_analysts = tuple(selected_analysts)
         self.debug = debug
 
-        self.quick_llm = create_llm(self.config, "quick")
-        self.deep_llm = create_llm(self.config, "deep")
+        # Streaming is what makes a live display possible; the display turns it
+        # on, and a config key can turn it on for a headless run too.
+        streaming = bool(self.config.get("streaming"))
+        self.quick_llm = create_llm(self.config, "quick", streaming=streaming)
+        self.deep_llm = create_llm(self.config, "deep", streaming=streaming)
 
         self.workflow = build_graph(
             self.selected_analysts, self.quick_llm, self.deep_llm
         )
         self.graph = self.workflow.compile()
+
+    def build_run_config(
+        self,
+        ticker: str,
+        trade_date: str,
+        *,
+        asset_type: str = "stock",
+        trace_session: str | None = None,
+    ) -> RunnableConfig:
+        """The RunnableConfig for one run: recursion limit, callbacks, trace metadata.
+
+        Langfuse reads its own keys out of ``metadata`` (``langfuse_session_id``,
+        ``langfuse_tags``) and the trace's display name out of ``run_name``; the
+        rest is plain metadata visible on the trace. Passing all of it here
+        rather than at the call site keeps the wiring in one place.
+        """
+        meta = trace_metadata(
+            ticker,
+            trade_date,
+            asset_type=asset_type,
+            session_id=trace_session or ticker.upper(),
+        )
+        return cast(
+            RunnableConfig,
+            {
+                "recursion_limit": self.config["max_recur_limit"],
+                "callbacks": build_callbacks(self.config),
+                "run_name": meta.pop("run_name"),
+                "metadata": meta,
+            },
+        )
 
     def propagate(
         self,
@@ -64,6 +100,7 @@ class TradingGraph:
         trade_date: str,
         asset_type: str = "stock",
         portfolio: PortfolioContext | None = None,
+        display: ProgressDisplay | None = None,
     ) -> tuple[dict, str]:
         """Run the analyst graph once.
 
@@ -72,19 +109,26 @@ class TradingGraph:
         """
         trade_date = _validate_trade_date(trade_date)
         state = self._initial_state(ticker, trade_date, asset_type, portfolio)
-        cfg = cast(
-            RunnableConfig,
-            {"recursion_limit": self.config["max_recur_limit"]},
-        )
 
-        if self.debug:
-            final: dict[str, Any] = dict(state)
-            for step in self.graph.stream(state, config=cfg, stream_mode="values"):
-                if isinstance(step, dict):
-                    final = step
-            return final, final.get("market_report", "")
+        if display is not None and not self.config.get("streaming"):
+            # Rebuild the models with streaming on; the graph holds references
+            # to the old ones, so the whole graph is rebuilt rather than
+            # reached into. Cheap next to the run it enables.
+            self.config = {**self.config, "streaming": True}
+            self.quick_llm = create_llm(self.config, "quick", streaming=True)
+            self.deep_llm = create_llm(self.config, "deep", streaming=True)
+            self.workflow = build_graph(
+                self.selected_analysts, self.quick_llm, self.deep_llm
+            )
+            self.graph = self.workflow.compile()
 
-        final: dict[str, Any] = self.graph.invoke(state, config=cfg)
+        cfg = self.build_run_config(ticker, trade_date, asset_type=asset_type)
+
+        if display is not None:
+            final = stream_graph(self.graph, state, cast(dict, cfg), display)
+        else:
+            final = self.graph.invoke(state, config=cfg)
+
         return final, final.get("investment_plan", "")
 
     def _initial_state(

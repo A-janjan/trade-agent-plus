@@ -22,6 +22,8 @@ _ENV_OVERRIDES = {
     "TRADEAGENTS_MAX_RISK_ROUNDS": "max_risk_discuss_rounds",
     "TRADEAGENTS_CHECKPOINT_ENABLED": "checkpoint_enabled",
     "TRADEAGENTS_TEMPERATURE": "temperature",
+    "TRADEAGENTS_STREAMING": "streaming",
+    "TRADEAGENTS_LANGFUSE_ENABLED": "langfuse_enabled",
 }
 
 _BOOL_TRUE = ("true", "1", "yes", "on")
@@ -102,5 +104,13 @@ DEFAULT_CONFIG = _apply_env_overrides(
             "ECB Bank of England BOJ central bank policy",
             "oil commodities supply chain energy",
         ],
+        # Live token streaming. Turned on automatically when a progress display
+        # is attached; set it here for a headless run whose output you are
+        # watching through some other channel.
+        "streaming": True,
+        # "auto" (default) traces when LANGFUSE_PUBLIC_KEY and
+        # LANGFUSE_SECRET_KEY are both set; "on" requires them and raises if
+        # absent; "off" disables tracing unconditionally.
+        "langfuse_enabled": "auto",
     }
 )
