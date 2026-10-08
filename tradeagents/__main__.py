@@ -62,7 +62,7 @@ def main() -> int:
         display = ProgressDisplay(title=f"tradeagents · {ticker} · {trade_date}")
 
     try:
-        final, plan = graph.propagate(ticker, trade_date, display=display)
+        final, _ = graph.propagate(ticker, trade_date, display=display)
     finally:
         # A process that exits before the SDK's batch drains loses its trace;
         # flushing in a finally means a failed run is traced too.
@@ -72,8 +72,12 @@ def main() -> int:
         report = final.get(key, "")
         if report:
             print(f"\n===== {key} =====\n\n{report}")
+    plan = final.get("investment_plan", "")
     if plan:
         print(f"\n===== investment_plan =====\n\n{plan}")
+    proposal = final.get("trader_investment_plan", "")
+    if proposal:
+        print(f"\n===== trader_proposal =====\n\n{proposal}")
     return 0
 
 

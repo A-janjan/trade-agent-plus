@@ -102,10 +102,11 @@ class TradingGraph:
         portfolio: PortfolioContext | None = None,
         display: ProgressDisplay | None = None,
     ) -> tuple[dict, str]:
-        """Run the analyst graph once.
+        """Run the pipeline once.
 
-        Returns ``(final_state, investment_plan)``. The market report is also
-        available as ``final_state["investment_plan"]``; the tuple is convenience.
+        Returns ``(final_state, primary_output)``, where ``primary_output`` is
+        the trader's transaction proposal, or the investment plan if the trader
+        did not produce one. Both are also reachable on ``final_state``.
         """
         trade_date = _validate_trade_date(trade_date)
         state = self._initial_state(ticker, trade_date, asset_type, portfolio)
@@ -129,7 +130,7 @@ class TradingGraph:
         else:
             final = self.graph.invoke(state, config=cfg)
 
-        return final, final.get("investment_plan", "")
+        return final, final.get("trader_investment_plan", "")
 
     def _initial_state(
         self,

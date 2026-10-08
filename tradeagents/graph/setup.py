@@ -27,6 +27,7 @@ from tradeagents.agents.context import create_msg_delete
 from tradeagents.agents.researchers.debate import create_debate_participant
 from tradeagents.agents.researchers.lead import create_investment_lead
 from tradeagents.agents.state import AgentState
+from tradeagents.agents.trader.trader import create_trader
 
 ANALYST_REGISTRY: dict[str, dict] = {
     "market": {
@@ -133,6 +134,7 @@ def build_graph(selected_analysts, quick_llm, deep_llm):
         ),
     )
     workflow.add_node("Investment Lead", create_investment_lead(deep_llm))
+    workflow.add_node("Trader", create_trader(quick_llm))
 
     # Edges: analyst chain
     workflow.add_edge(START, specs[0]["node"])
@@ -167,6 +169,7 @@ def build_graph(selected_analysts, quick_llm, deep_llm):
         ),
         debate_choices,
     )
-    workflow.add_edge("Investment Lead", END)
+    workflow.add_edge("Investment Lead", "Trader")
+    workflow.add_edge("Trader", END)
 
     return workflow
