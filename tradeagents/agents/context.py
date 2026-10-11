@@ -141,3 +141,38 @@ def create_msg_delete():
         return {"messages": removals + [placeholder]}
 
     return delete_messages
+
+
+def get_instrument_context_from_state(state) -> str:
+    """The run's resolved instrument context, with a fallback for bare states.
+
+    A state assembled outside ``TradingGraph`` (a test, a script) may not have
+    ``instrument_context`` populated. Falling back to a freshly-built
+    ticker-only context means a consumer is never forced to know about the
+    resolution step.
+    """
+    context = state.get("instrument_context")
+    if isinstance(context, str) and context.strip():
+        return context
+    return build_instrument_context(
+        str(state["company_of_interest"]),
+        state.get("asset_type", "stock"),
+    )
+
+
+_NO_PORTFOLIO_NOTICE = (
+    "No portfolio was provided for this run. Do not assume the caller holds a "
+    "flat book — give direction and sizing guidance in terms they can apply to "
+    "their own position."
+)
+
+
+def get_portfolio_context_from_state(state) -> str:
+    """The caller's book, or a notice that none was given.
+
+    Absence and flatness are different claims about an account. Returning the
+    empty string would read to a model as "no holdings"; returning a clear
+    notice tells it what it actually does not know.
+    """
+    context = (state.get("portfolio_context") or "").strip()
+    return context if context else _NO_PORTFOLIO_NOTICE

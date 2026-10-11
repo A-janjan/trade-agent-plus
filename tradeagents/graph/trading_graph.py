@@ -105,8 +105,7 @@ class TradingGraph:
         """Run the pipeline once.
 
         Returns ``(final_state, primary_output)``, where ``primary_output`` is
-        the trader's transaction proposal, or the investment plan if the trader
-        did not produce one. Both are also reachable on ``final_state``.
+        the Portfolio Manager's final decision — the run's headline result.
         """
         trade_date = _validate_trade_date(trade_date)
         state = self._initial_state(ticker, trade_date, asset_type, portfolio)
@@ -130,7 +129,7 @@ class TradingGraph:
         else:
             final = self.graph.invoke(state, config=cfg)
 
-        return final, final.get("trader_investment_plan", "")
+        return final, final.get("final_trade_decision", "")
 
     def _initial_state(
         self,

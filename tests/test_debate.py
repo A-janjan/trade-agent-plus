@@ -1,12 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from langchain_core.messages import AIMessage
 
-from tradeagents.agents.researchers.debate import (
-    _render_transcript,
-    create_debate_participant,
-)
 from tradeagents.agents.researchers.lead import create_investment_lead
 from tradeagents.agents.schemas import InvestmentPlan, Stance, render_investment_plan
 from tradeagents.graph.setup import build_graph
@@ -52,53 +47,6 @@ def _state(**overrides):
     }
     state.update(overrides)
     return state
-
-
-@pytest.mark.unit
-def test_render_transcript_empty():
-    assert "no arguments" in _render_transcript([], ["upside", "downside"]).lower()
-
-
-@pytest.mark.unit
-def test_render_transcript_numbers_rounds():
-    transcript = [
-        {"speaker": "upside", "content": "up 1"},
-        {"speaker": "downside", "content": "down 1"},
-        {"speaker": "upside", "content": "up 2"},
-    ]
-    out = _render_transcript(transcript, ["upside", "downside"])
-    assert "Round 1" in out and "Round 2" in out
-    assert "up 1" in out and "down 1" in out and "up 2" in out
-
-
-@pytest.mark.unit
-def test_debate_participant_appends_turn():
-    llm = ScriptedLLM([AIMessage(content="Upside case text.")])
-    node = create_debate_participant(
-        llm, "upside_case", "upside", ["upside", "downside"]
-    )
-    out = node(_state())
-    turns = out["research_debate"]["transcript"]
-    assert len(turns) == 1
-    assert turns[0]["speaker"] == "upside"
-    assert "Upside case text" in turns[0]["content"]
-
-
-@pytest.mark.unit
-def test_debate_participant_second_turn_appends():
-    llm = ScriptedLLM([AIMessage(content="Downside responds.")])
-    node = create_debate_participant(
-        llm, "downside_case", "downside", ["upside", "downside"]
-    )
-    state = _state(
-        research_debate={
-            "transcript": [{"speaker": "upside", "content": "opening"}],
-            "max_rounds": 1,
-            "verdict": "",
-        }
-    )
-    out = node(state)
-    assert len(out["research_debate"]["transcript"]) == 2
 
 
 @pytest.mark.unit

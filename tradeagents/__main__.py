@@ -72,12 +72,10 @@ def main() -> int:
         report = final.get(key, "")
         if report:
             print(f"\n===== {key} =====\n\n{report}")
-    plan = final.get("investment_plan", "")
-    if plan:
-        print(f"\n===== investment_plan =====\n\n{plan}")
-    proposal = final.get("trader_investment_plan", "")
-    if proposal:
-        print(f"\n===== trader_proposal =====\n\n{proposal}")
+    for key in ("investment_plan", "trader_investment_plan", "final_trade_decision"):
+        text = final.get(key, "")
+        if text:
+            print(f"\n===== {key} =====\n\n{text}")
     return 0
 
 

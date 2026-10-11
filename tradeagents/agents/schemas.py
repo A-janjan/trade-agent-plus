@@ -258,3 +258,74 @@ def render_trader_proposal(proposal: TraderProposal) -> str:
             f"**Position Sizing**: {show(proposal.position_sizing)}",
         ]
     )
+
+
+class PortfolioDecision(BaseModel):
+    """The Portfolio Manager's final decision.
+
+    Reuses the research lead's ``Stance`` scale, so a rating means the same
+    thing everywhere in the pipeline and the decision log's rating column is
+    comparable across phases and runs.
+    """
+
+    rating: Stance = Field(
+        description=(
+            "The final rating. Exactly one of Strong Buy / Buy / Hold / Sell / "
+            "Strong Sell. The risk debate will contain conflicts; deciding "
+            "which side is stronger is the job, so conflict alone is not a "
+            "reason to Hold. Choose Hold only when the evidence is genuinely "
+            "balanced after weighing, or too thin to support a call."
+        ),
+    )
+    executive_summary: str = Field(
+        description=(
+            "A concise action plan covering entry strategy, sizing, key risk "
+            "levels, and horizon. Two to four sentences."
+        ),
+    )
+    investment_thesis: str = Field(
+        description=(
+            "The reasoning that decided the rating, anchored in specific "
+            "evidence from the risk debate and the trader's proposal."
+        ),
+    )
+    price_target: float | None = Field(
+        default=None,
+        description=(
+            "Optional target price as an absolute number in the instrument's "
+            "quote currency, never a percentage or a range."
+        ),
+    )
+    time_horizon: str | None = Field(
+        default=None,
+        description="Optional holding horizon, e.g. '3-6 months'.",
+    )
+
+    @field_validator("price_target", mode="before")
+    @classmethod
+    def _normalize_price(cls, v):
+        return _coerce_price(v)
+
+
+def render_pm_decision(decision: PortfolioDecision) -> str:
+    """Render a PortfolioDecision to the markdown the rest of the system consumes.
+
+    Field labels are stable so downstream parsers (the decision log, the
+    report tree writer) can rely on them.
+    """
+
+    def show(value):
+        return "not provided" if value is None or value == "" else value
+
+    return "\n".join(
+        [
+            f"**Rating**: {decision.rating.value}",
+            "",
+            f"**Executive Summary**: {decision.executive_summary}",
+            "",
+            f"**Investment Thesis**: {decision.investment_thesis}",
+            "",
+            f"**Price Target**: {show(decision.price_target)}",
+            f"**Time Horizon**: {show(decision.time_horizon)}",
+        ]
+    )
