@@ -33,8 +33,8 @@ def generate_reflection(
         ticker=ticker,
         trade_date=trade_date,
         decision=decision,
-        raw_return=raw_return,
-        alpha_return=alpha_return,
+        raw_return=f"{raw_return:+.1%}",
+        alpha_return=f"{alpha_return:+.1%}",
         holding_days=holding_days,
         benchmark=benchmark,
     )

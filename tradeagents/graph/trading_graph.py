@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Any, cast
 
 from langchain_core.messages import HumanMessage
@@ -12,6 +13,7 @@ from langchain_core.runnables import RunnableConfig
 from tradeagents.agents.context import build_instrument_context
 from tradeagents.agents.state import AgentState
 from tradeagents.dataflows.date_window import get_current_date
+from tradeagents.dataflows.symbols import safe_ticker_component
 from tradeagents.default_config import DEFAULT_CONFIG
 from tradeagents.graph.progress import ProgressDisplay, stream_graph
 from tradeagents.graph.setup import build_graph
@@ -22,6 +24,7 @@ from tradeagents.memory.rating import parse_rating
 from tradeagents.memory.settlement import settle_pending
 from tradeagents.observability import build_callbacks, trace_metadata
 from tradeagents.portfolio import PortfolioContext
+from tradeagents.reporting import write_report_tree
 
 logger = logging.getLogger(__name__)
 
@@ -239,4 +242,36 @@ class TradingGraph:
                 "rating": rating,
                 "decision": decision,
             }
+        )
+
+    def save_reports(
+        self,
+        final_state: dict,
+        ticker: str,
+        save_path: str | Path | None = None,
+    ) -> Path:
+        """Write the run's report tree to disk; return the complete-report path.
+
+        When ``save_path`` is not given, a timestamped directory under
+        ``results_dir`` is used, so a headless run gets the same on-disk
+        artifact the CLI does without the caller naming a location.
+
+        ``settled`` and ``past_context`` come off ``final_state`` — the graph
+        already attached them — so the report reflects what the run knew and
+        learned, not just what it decided.
+        """
+        if save_path is None:
+            stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            save_path = (
+                Path(self.config["results_dir"])
+                / "reports"
+                / f"{safe_ticker_component(ticker)}_{stamp}"
+            )
+        return write_report_tree(
+            final_state,
+            ticker,
+            save_path,
+            config=self.config,
+            settled=final_state.get("settled") or [],
+            past_context=final_state.get("past_context") or "",
         )

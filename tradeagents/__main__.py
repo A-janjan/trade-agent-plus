@@ -5,6 +5,8 @@
 Options:
     --analysts=a,b,c    Select analysts (default: all four)
     --no-display        Suppress the live progress display
+    --save[=PATH]       Write the report tree; default is a timestamped
+                        directory under results_dir
     --debug             Use the verbose debug path
 """
 
@@ -26,14 +28,21 @@ _REPORT_KEYS = (
 )
 
 
-def _parse_args(argv: list[str]) -> tuple[str, str, tuple[str, ...], bool, bool]:
+def _parse_args(
+    argv: list[str],
+) -> tuple[str, str, tuple[str, ...], bool, bool, str | None]:
     flags = {a for a in argv if a.startswith("--")}
     positional = [a for a in argv if not a.startswith("--")]
 
     analysts = _ALL
+    save_path: str | None = None
     for a in argv:
         if a.startswith("--analysts="):
             analysts = tuple(a.split("=", 1)[1].split(","))
+        elif a == "--save":
+            save_path = ""  # sentinel: caller wants saving, default path
+        elif a.startswith("--save="):
+            save_path = a.split("=", 1)[1]
 
     if len(positional) < 2:
         print(__doc__)
@@ -45,11 +54,12 @@ def _parse_args(argv: list[str]) -> tuple[str, str, tuple[str, ...], bool, bool]
         analysts,
         "--debug" in flags,
         "--no-display" not in flags,
+        save_path,
     )
 
 
 def main() -> int:
-    ticker, trade_date, analysts, debug, want_display = _parse_args(sys.argv[1:])
+    ticker, trade_date, analysts, debug, want_display, save = _parse_args(sys.argv[1:])
 
     graph = TradingGraph(
         selected_analysts=analysts,
@@ -64,9 +74,10 @@ def main() -> int:
     try:
         final, _ = graph.propagate(ticker, trade_date, display=display)
     finally:
-        # A process that exits before the SDK's batch drains loses its trace;
-        # flushing in a finally means a failed run is traced too.
         flush_traces()
+
+    # Settled prior decisions came back on the state; report what was learned
+    # before printing the current run's output.
     settled = final.get("settled") or []
     if settled:
         print(f"\nSettled {len(settled)} prior decision(s) for {ticker}:")
@@ -76,7 +87,11 @@ def main() -> int:
                 f"{e['raw_return']:+.1%} raw | {e['alpha_return']:+.1%} alpha vs "
                 f"{e['benchmark']} | {e['holding_days']}d"
             )
-        print()
+
+    if save is not None:
+        path = graph.save_reports(final, ticker, save_path=save or None)
+        print(f"\nReports written to {path}")
+
     for key in _REPORT_KEYS:
         report = final.get(key, "")
         if report:

@@ -7,8 +7,8 @@ horizon, say so; a thesis for months is not disproved by a week.
 
 ## Outcome
 
-- Raw return: ${raw_return:+.1%}
-- Alpha vs ${benchmark}: ${alpha_return:+.1%}
+- Raw return: ${raw_return}
+- Alpha vs ${benchmark}: ${alpha_return}
 
 ## The decision you made
 

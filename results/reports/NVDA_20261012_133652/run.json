@@ -1,0 +1,25 @@
+{
+  "ticker": "NVDA",
+  "trade_date": "2026-10-08",
+  "generated_at": "2026-10-12T10:06:52+00:00",
+  "rating": "Buy",
+  "models": {
+    "provider": "openai",
+    "quick": "gemini/gemini-3.1-flash-lite",
+    "deep": "gemini/gemini-3.1-flash-lite"
+  },
+  "config_snapshot": {
+    "max_debate_rounds": 1,
+    "max_risk_discuss_rounds": 1,
+    "holding_period_days": 5,
+    "output_language": "English",
+    "data_vendors": {
+      "core_stock_apis": "yfinance",
+      "technical_indicators": "yfinance",
+      "fundamental_data": "yfinance",
+      "news_data": "yfinance"
+    },
+    "benchmark_ticker": null
+  },
+  "settled_count": 3
+}

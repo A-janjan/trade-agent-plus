@@ -20,6 +20,15 @@ from __future__ import annotations
 import logging
 import os
 from typing import Any
+import warnings
+from pydantic_core import PydanticSerializationUnexpectedValue
+
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message=r".*PydanticSerializationUnexpectedValue.*",
+)
+
 
 logger = logging.getLogger(__name__)
 
