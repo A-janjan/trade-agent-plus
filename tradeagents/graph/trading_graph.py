@@ -16,6 +16,10 @@ from tradeagents.default_config import DEFAULT_CONFIG
 from tradeagents.graph.progress import ProgressDisplay, stream_graph
 from tradeagents.graph.setup import build_graph
 from tradeagents.llm_clients import create_llm
+from tradeagents.memory.context import build_past_context
+from tradeagents.memory.log import DecisionLog
+from tradeagents.memory.rating import parse_rating
+from tradeagents.memory.settlement import settle_pending
 from tradeagents.observability import build_callbacks, trace_metadata
 from tradeagents.portfolio import PortfolioContext
 
@@ -49,6 +53,7 @@ class TradingGraph:
         debug: bool = False,
     ):
         self.config = config or DEFAULT_CONFIG.copy()
+        self.log = DecisionLog(self.config["memory_log_path"])
         self.selected_analysts = tuple(selected_analysts)
         self.debug = debug
 
@@ -105,9 +110,13 @@ class TradingGraph:
         """Run the pipeline once.
 
         Returns ``(final_state, primary_output)``, where ``primary_output`` is
-        the Portfolio Manager's final decision — the run's headline result.
+        the Portfolio Manager's final decision. If any prior decisions for this
+        ticker were settled on the way in, they are attached to
+        ``final_state["settled"]`` so the caller can tell the user what it
+        learned.
         """
         trade_date = _validate_trade_date(trade_date)
+        settled = self._settle(ticker)
         state = self._initial_state(ticker, trade_date, asset_type, portfolio)
 
         if display is not None and not self.config.get("streaming"):
@@ -129,7 +138,32 @@ class TradingGraph:
         else:
             final = self.graph.invoke(state, config=cfg)
 
+        final["settled"] = settled
+        self.record_decision(ticker, trade_date, final)
         return final, final.get("final_trade_decision", "")
+
+    def _settle(self, ticker):
+        """Settle prior decisions for this ticker. Never raises on failure.
+
+        A reflection call goes to a provider, and this runs on the way into a
+        new run: a transient failure leaves the entry pending rather than
+        aborting the analysis the user actually asked for.
+        """
+        try:
+            return settle_pending(ticker, self.log, self.quick_llm, self.config)
+        except Exception as exc:
+            logger.warning("Settlement failed for %s: %s", ticker, exc)
+            return []
+
+    def _memory_as_of(self, trade_date: str) -> str | None:
+        """The point-in-time cutoff for past lessons.
+
+        A historical run (trade date before today) sees only lessons whose
+        outcome was already known by the trade date — a backtest must not learn
+        from an outcome that had not happened yet. A live run sees everything
+        settled, since the entry's own resolution date is already behind it.
+        """
+        return trade_date if trade_date < get_current_date() else None
 
     def _initial_state(
         self,
@@ -155,7 +189,11 @@ class TradingGraph:
             "portfolio_context": (
                 portfolio.render(ticker) if portfolio is not None else ""
             ),
-            "past_context": "",
+            "past_context": build_past_context(
+                self.log,
+                ticker,
+                as_of=self._memory_as_of(trade_date),
+            ),
             "sender": "",
             "market_report": "",
             "sentiment_report": "",
@@ -174,4 +212,31 @@ class TradingGraph:
             "investment_plan": "",
             "trader_investment_plan": "",
             "final_trade_decision": "",
+            "final_rating": "",
         }
+
+    def record_decision(self, ticker, trade_date, final_state) -> bool:
+        """Persist the run's decision to the log. Returns whether it was recorded.
+
+        A re-run of the same ticker and date is a no-op: recording it twice
+        would double-count the decision in every aggregate over the log.
+        """
+        decision = final_state.get("final_trade_decision")
+        if not decision:
+            logger.warning(
+                "No final decision for %s on %s; nothing logged", ticker, trade_date
+            )
+            return False
+
+        # Prefer the PM's structured rating; fall back to parsing the rendered
+        # markdown only when the structured path did not run.
+        rating = final_state.get("final_rating") or parse_rating(decision)
+
+        return self.log.record(
+            {
+                "ticker": ticker,
+                "trade_date": trade_date,
+                "rating": rating,
+                "decision": decision,
+            }
+        )

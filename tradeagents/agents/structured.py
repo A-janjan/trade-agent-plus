@@ -52,18 +52,22 @@ def invoke_structured_or_freetext(
     prompt: Any,
     render: Callable[[T], str],
     agent_name: str,
+    on_structured: Callable[[T], None] | None = None,
 ) -> str:
     """Run the structured call and render to markdown; fall back to free text.
 
-    A thinking model can answer in prose instead of calling the schema tool,
-    leaving the parser with nothing; that is treated as a structured miss and
-    falls through to the free-text path.
+    ``on_structured``, when given, receives the parsed Pydantic object before
+    rendering. Use it to pull a typed field (a rating enum) out of the result
+    without re-parsing the rendered markdown — the field is only available on
+    the structured path, so the callback is called only there.
     """
     if structured_llm is not None:
         try:
             result = structured_llm.invoke(prompt)
             if result is None:
                 raise ValueError("structured output returned no parsed result")
+            if on_structured is not None:
+                on_structured(result)
             return render(result)
         except Exception as exc:
             logger.warning(

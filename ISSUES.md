@@ -1,0 +1,1 @@
+"settle_pending()" is not completely correct. it needs to have restriction for fetching close prices (it has look-ahead bias!!!). [but at reviewing the lessons(in PM agent) we solved it at all] (already fixed but can be improved)

@@ -67,7 +67,16 @@ def main() -> int:
         # A process that exits before the SDK's batch drains loses its trace;
         # flushing in a finally means a failed run is traced too.
         flush_traces()
-
+    settled = final.get("settled") or []
+    if settled:
+        print(f"\nSettled {len(settled)} prior decision(s) for {ticker}:")
+        for e in settled:
+            print(
+                f"  - {e['trade_date']}: {e['rating']} | "
+                f"{e['raw_return']:+.1%} raw | {e['alpha_return']:+.1%} alpha vs "
+                f"{e['benchmark']} | {e['holding_days']}d"
+            )
+        print()
     for key in _REPORT_KEYS:
         report = final.get(key, "")
         if report:

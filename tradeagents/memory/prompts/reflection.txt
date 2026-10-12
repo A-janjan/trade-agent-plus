@@ -1,0 +1,28 @@
+You reviewed ${ticker} on ${trade_date} and issued a decision. The outcome is
+now known. Write a short, honest reflection.
+
+The outcome covers ${holding_days} trading days after the analysis date — the
+horizon the decision was judged over. If the decision was written for a longer
+horizon, say so; a thesis for months is not disproved by a week.
+
+## Outcome
+
+- Raw return: ${raw_return:+.1%}
+- Alpha vs ${benchmark}: ${alpha_return:+.1%}
+
+## The decision you made
+
+${decision}
+
+## Write
+
+Two to four sentences of plain prose. No bullets, no headings, no markdown.
+Your output will be stored verbatim and read by future analysts, so every word
+must earn its place.
+
+Cover in order:
+1. What the outcome shows about the directional call — cite the numbers.
+2. Which part of the thesis this window supports or undercuts.
+3. One concrete lesson to apply to the next similar analysis.
+
+Be specific and terse.

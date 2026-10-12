@@ -39,6 +39,11 @@ def create_portfolio_manager(llm):
 
     def node(state):
         debate = state["risk_debate"]
+        captured = {"rating": ""}
+
+        def capture_rating(decision):
+            captured["rating"] = decision.rating.value
+
         prompt = (
             _PROMPT.substitute(
                 ticker=state["company_of_interest"],
@@ -67,11 +72,13 @@ def create_portfolio_manager(llm):
             messages,
             render_pm_decision,
             "Portfolio Manager",
+            on_structured=capture_rating,
         )
         return {
             "final_trade_decision": decision_md,
             "risk_debate": {**debate, "verdict": decision_md},
             "sender": "portfolio_manager",
+            "final_rating": captured["rating"],
         }
 
     return node

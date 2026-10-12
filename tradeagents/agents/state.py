@@ -64,3 +64,8 @@ class AgentState(MessagesState):
     # Risk debate
     risk_debate: Annotated[DebateState, "Three-sided risk debate"]
     final_trade_decision: Annotated[str, "Portfolio Manager's final decision"]
+
+    # The 5-tier rating extracted from the PM's structured output, or "" when
+    # the free-text path was taken. Stored so the decision log reads a field
+    # rather than regex-ing prose.
+    final_rating: Annotated[str, "5-tier rating from the PM's structured output"]

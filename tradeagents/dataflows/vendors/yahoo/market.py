@@ -137,3 +137,30 @@ def get_stock_stats_indicators_window(
         + "\n\n"
         + INDICATOR_DESCRIPTIONS[indicator]
     )
+
+
+def get_closes(symbol: str, start_date: str, end_date: str) -> pd.Series:
+    """Daily closes from ``start_date`` up to but not including ``end_date``.
+
+    A raw Series, not the router's string format — this is for internal code
+    (settlement scoring a prior decision's return), not for LLM tool calls.
+    The Series index is a ``DatetimeIndex``, so callers can read the date of any
+    bar they use as the resolution date of a settled outcome.
+    """
+    canonical = normalize_symbol(symbol)
+    try:
+        history = yf_retry(
+            lambda: __import__("yfinance")
+            .Ticker(canonical)
+            .history(
+                start=start_date,
+                end=end_date,
+            )
+        )
+    except Exception as e:
+        raise NoMarketDataError(symbol, canonical, f"prices unavailable: {e}") from e
+    return (
+        history["Close"]
+        if history is not None and "Close" in history
+        else pd.Series(dtype=float)
+    )

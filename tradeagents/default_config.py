@@ -24,6 +24,8 @@ _ENV_OVERRIDES = {
     "TRADEAGENTS_TEMPERATURE": "temperature",
     "TRADEAGENTS_STREAMING": "streaming",
     "TRADEAGENTS_LANGFUSE_ENABLED": "langfuse_enabled",
+    "TRADEAGENTS_MEMORY_LOG": "memory_log_path",
+    "TRADEAGENTS_HOLDING_DAYS": "holding_period_days",
 }
 
 _BOOL_TRUE = ("true", "1", "yes", "on")
@@ -112,5 +114,22 @@ DEFAULT_CONFIG = _apply_env_overrides(
         # LANGFUSE_SECRET_KEY are both set; "on" requires them and raises if
         # absent; "off" disables tracing unconditionally.
         "langfuse_enabled": "auto",
+        "memory_log_path": os.getenv("TRADEAGENTS_MEMORY_LOG")
+        or os.path.join(_TRADEAGENTS_HOME, "memory", "decisions.jsonl"),
+        "holding_period_days": 5,
+        "benchmark_ticker": None,
+        "benchmark_map": {
+            ".NS": "^NSEI",
+            ".BO": "^BSESN",
+            ".T": "^N225",
+            ".HK": "^HSI",
+            ".L": "^FTSE",
+            ".TO": "^GSPTSE",
+            ".AX": "^AXJO",
+            ".SS": "000001.SS",
+            ".SZ": "399001.SZ",
+            ".SA": "^BVSP",
+            "": "SPY",
+        },
     }
 )
