@@ -8,9 +8,14 @@ from string import Template
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from tradeagents.agents.context import get_language_instruction
-from tradeagents.agents.tools import get_global_news, get_news
+from tradeagents.agents.tools import (
+    get_global_news,
+    get_macro,
+    get_news,
+    get_prediction_markets,
+)
 
-TOOLS = (get_news, get_global_news)
+TOOLS = (get_news, get_global_news, get_macro, get_prediction_markets)
 
 _PROMPT = Template(
     (Path(__file__).parent / "prompts" / "news_analyst.txt").read_text(encoding="utf-8")

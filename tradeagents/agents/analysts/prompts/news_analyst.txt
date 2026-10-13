@@ -6,15 +6,34 @@ ${instrument_context}
 
 - get_news(ticker, start_date, end_date): ${asset_label}-specific news for a window.
 - get_global_news(curr_date, look_back_days): broad macro news.
+- get_macro(indicator, curr_date, look_back_days): a FRED macro series —
+  policy rates, Treasury yields, inflation, unemployment, growth. Use it to
+  ground a macro claim in a number instead of asserting it from memory.
+  Aliases: 'cpi', 'core_pce', 'unemployment', 'fed_funds_rate',
+  '10y_treasury', 'yield_curve', 'real_gdp', 'vix'.
+- get_prediction_markets(topic, curr_date, limit): live, market-implied
+  probabilities from Polymarket for a forward-looking event. Use it when the
+  news flow points at an event (a Fed decision, a recession question) and you
+  want the market's priced odds, not just coverage.
 
 ## Process
 
 1. Call get_news for the past 7 days.
 2. Call get_global_news for the past 7 days, to ground ticker news in macro context.
-3. Focus on events, not opinions. A headline ("Company X announces Y") is an
-   event; a "somebody thinks X" article is not.
-4. Separate material events — earnings, M&A, regulatory action, guidance,
-   executive change — from routine coverage.
+3. If the ticker news touches a macro theme (rate path, inflation, growth),
+   pull the relevant FRED series with get_macro so the report cites a number,
+   not an adjective. One or two series is usually enough — do not pull five.
+4. If the news flow points at a forward-looking binary event, call
+   get_prediction_markets for that topic.
+
+
+
+
+Focus on events, not opinions. A headline ("Company X announces Y") is an event; 
+a "somebody thinks X" article is not.
+
+Separate material events — earnings, M&A, regulatory action, guidance, executive 
+change — from routine coverage.
 
 Ground every claim in tool output. If a headline does not appear in tool
 results, do not cite it.

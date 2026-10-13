@@ -124,3 +124,54 @@ def get_global_news(
     return route_to_vendor(
         "get_global_news", as_of(curr_date, trade_date) or curr_date, look_back_days
     )
+
+
+@tool
+def get_macro(
+    indicator: Annotated[
+        str,
+        "Macro series: an alias ('cpi', 'core_pce', 'unemployment', "
+        "'fed_funds_rate', '10y_treasury', 'yield_curve', 'real_gdp', 'vix') "
+        "or a raw FRED series ID.",
+    ],
+    curr_date: Annotated[str, "Analysis date YYYY-MM-DD"],
+    look_back_days: Annotated[int, "Trailing window in days"] = 365,
+    trade_date: Annotated[str, InjectedState("trade_date")] = "",
+) -> str:
+    """A FRED macroeconomic series, at the vintage known by the analysis date.
+
+    Use this to ground macro claims in numbers (a rate, an inflation print, a
+    yield curve reading) rather than describing them from memory. A historical
+    analysis gets the values that were published by then, not later revisions.
+    """
+    return route_to_vendor(
+        "get_macro",
+        indicator,
+        as_of(curr_date, trade_date) or curr_date,
+        look_back_days,
+    )
+
+
+@tool
+def get_prediction_markets(
+    topic: Annotated[
+        str,
+        "Event keyword(s): 'Fed rate cut', 'recession 2026', 'US election', "
+        "a sector or company event.",
+    ],
+    curr_date: Annotated[str, "Analysis date YYYY-MM-DD"],
+    limit: Annotated[int, "Maximum markets to return"] = 6,
+    trade_date: Annotated[str, InjectedState("trade_date")] = "",
+) -> str:
+    """Live prediction-market probabilities for forward-looking events.
+
+    A complement to news ("what happened") and macro data ("where things
+    stand"): what the crowd prices to happen next, with the volume behind
+    each price.
+    """
+    return route_to_vendor(
+        "get_prediction_markets",
+        topic,
+        as_of(curr_date, trade_date) or curr_date,
+        limit,
+    )

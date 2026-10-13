@@ -1,0 +1,1 @@
+"""HTTP API: exposes the pipeline over REST + SSE for the web frontend."""

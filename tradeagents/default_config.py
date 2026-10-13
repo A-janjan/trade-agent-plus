@@ -26,6 +26,7 @@ _ENV_OVERRIDES = {
     "TRADEAGENTS_LANGFUSE_ENABLED": "langfuse_enabled",
     "TRADEAGENTS_MEMORY_LOG": "memory_log_path",
     "TRADEAGENTS_HOLDING_DAYS": "holding_period_days",
+    "TRADEAGENTS_ALPHA_VANTAGE_KEY": "alpha_vantage_key_env_unused",
 }
 
 _BOOL_TRUE = ("true", "1", "yes", "on")
@@ -92,6 +93,8 @@ DEFAULT_CONFIG = _apply_env_overrides(
             "technical_indicators": "yfinance",
             "fundamental_data": "yfinance",
             "news_data": "yfinance",
+            "macro_data": "fred",
+            "prediction_markets": "polymarket",
         },
         # Tool-level overrides take precedence over category-level.
         "tool_vendors": {},

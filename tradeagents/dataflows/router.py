@@ -31,6 +31,25 @@ from tradeagents.dataflows.errors import (
     VendorNotConfiguredError,
     VendorRateLimitError,
 )
+from tradeagents.dataflows.vendors.alpha_vantage import (
+    get_balance_sheet as get_av_balance_sheet,
+    get_cashflow as get_av_cashflow,
+    get_fundamentals as get_av_fundamentals,
+    get_global_news as get_av_global_news,
+    get_income_statement as get_av_income_statement,
+    get_indicators as get_av_indicators,
+    get_news as get_av_news,
+    get_stock_data as get_av_stock_data,
+)
+from tradeagents.dataflows.vendors.fred import get_macro as get_fred_macro
+from tradeagents.dataflows.vendors.polymarket import (
+    get_prediction_markets as get_polymarket_markets,
+)
+from tradeagents.dataflows.vendors.sec_edgar import (
+    get_balance_sheet as get_sec_balance_sheet,
+    get_cashflow as get_sec_cashflow,
+    get_income_statement as get_sec_income,
+)
 from tradeagents.dataflows.vendors.yahoo.fundamentals import (
     get_balance_sheet as get_yfinance_balance_sheet,
     get_cashflow as get_yfinance_cashflow,
@@ -53,7 +72,7 @@ logger = logging.getLogger(__name__)
 # (e.g. all technical indicators can come from the same vendor).
 TOOLS_CATEGORIES = {
     "core_stock_apis": {
-        "description": "OHLCV stock price data",
+        "description": "OHLCV price data",
         "tools": ["get_stock_data"],
     },
     "technical_indicators": {
@@ -70,23 +89,63 @@ TOOLS_CATEGORIES = {
         ],
     },
     "news_data": {
-        "description": "News and macro",
+        "description": "News and macro events",
         "tools": ["get_news", "get_global_news"],
     },
+    "macro_data": {
+        "description": "Macroeconomic series (FRED)",
+        "tools": ["get_macro"],
+    },
+    "prediction_markets": {
+        "description": "Prediction-market probabilities (Polymarket)",
+        "tools": ["get_prediction_markets"],
+    },
 }
-
 
 # Method -> {vendor name: callable}. Adding a vendor here is all that is needed
 # to make it selectable for a method.
 VENDOR_METHODS: dict[str, dict[str, Callable[..., Any]]] = {
-    "get_stock_data": {"yfinance": get_yfinance_stock_data},
-    "get_indicators": {"yfinance": get_yfinance_indicators},
-    "get_fundamentals": {"yfinance": get_yfinance_fundamentals},
-    "get_balance_sheet": {"yfinance": get_yfinance_balance_sheet},
-    "get_cashflow": {"yfinance": get_yfinance_cashflow},
-    "get_income_statement": {"yfinance": get_yfinance_income_statement},
-    "get_news": {"yfinance": get_yfinance_news},
-    "get_global_news": {"yfinance": get_yfinance_global_news},
+    "get_stock_data": {
+        "yfinance": get_yfinance_stock_data,
+        "alpha_vantage": get_av_stock_data,
+    },
+    "get_indicators": {
+        "yfinance": get_yfinance_indicators,
+        "alpha_vantage": get_av_indicators,
+    },
+    "get_fundamentals": {
+        "yfinance": get_yfinance_fundamentals,
+        "alpha_vantage": get_av_fundamentals,
+    },
+    "get_balance_sheet": {
+        "yfinance": get_yfinance_balance_sheet,
+        "alpha_vantage": get_av_balance_sheet,
+        "sec_edgar": get_sec_balance_sheet,
+    },
+    "get_cashflow": {
+        "yfinance": get_yfinance_cashflow,
+        "alpha_vantage": get_av_cashflow,
+        "sec_edgar": get_sec_cashflow,
+    },
+    "get_income_statement": {
+        "yfinance": get_yfinance_income_statement,
+        "alpha_vantage": get_av_income_statement,
+        "sec_edgar": get_sec_income,
+    },
+    "get_news": {
+        "yfinance": get_yfinance_news,
+        "alpha_vantage": get_av_news,
+    },
+    "get_global_news": {
+        "yfinance": get_yfinance_global_news,
+        "alpha_vantage": get_av_global_news,
+    },
+    "get_macro": {
+        "fred": get_fred_macro,
+    },
+    "get_prediction_markets": {
+        "polymarket": get_polymarket_markets,
+    },
 }
 
 
