@@ -8,3 +8,5 @@ yfinance
 langchain-openai
 langfuse
 rich
+fastapi
+sse_starlette

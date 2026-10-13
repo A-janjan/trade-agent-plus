@@ -289,3 +289,110 @@ def stream_graph(
     finally:
         display.stop()
     return final
+
+
+async def stream_events(graph, inputs, config: dict):
+    """Async generator of the API's normalized events for one graph run.
+
+    Streams three modes together:
+
+      * ``messages`` — LLM tokens, tagged with the emitting node, for the
+        live preview.
+      * ``updates`` — one delta per completed node. A node's update contains
+        exactly what that node returned, so the *content* of each report,
+        each debate turn, and the final decision arrives here without
+        re-scanning the whole state.
+      * ``values`` — the full state after each step. Only the last payload is
+        used, emitted as a single ``run.state`` event at the end of the run.
+
+    The mapping tables in ``api.events`` (``REPORT_NODES``,
+    ``DEBATE_SPEAKERS``) drive which event each node's update produces, so
+    adding a report or a debate participant is a table entry.
+    """
+    from tradeagents.api import events as ev
+
+    last_values: dict = {}
+
+    async for item in graph.astream(
+        inputs,
+        config=config,
+        stream_mode=["values", "updates", "messages"],
+    ):
+        mode, payload = _unpack(item)
+
+        if mode == "values":
+            if isinstance(payload, dict):
+                last_values = payload
+
+        elif mode == "messages":
+            if not isinstance(payload, tuple) or len(payload) != 2:
+                continue
+            chunk, metadata = payload
+            metadata = metadata if isinstance(metadata, dict) else {}
+            node = metadata.get("langgraph_node", "")
+            text = _chunk_text(chunk)
+            if text and node:
+                yield ev.token(node, text)
+
+        elif mode == "updates":
+            if not isinstance(payload, dict):
+                continue
+            for node, update in payload.items():
+                if isinstance(update, dict):
+                    for event in _events_for_node(ev, node, update):
+                        yield event
+                yield ev.node_finished(node)
+
+    # The final full state. Emitted once, after every node has finished, so
+    # a late subscriber or a reconnecting client can rebuild the whole view.
+    if last_values:
+        yield ev.run_state(last_values)
+
+
+def _events_for_node(ev, node: str, update: dict):
+    """The per-content events a single node's update produces.
+
+    Three kinds of node produce content that the UI shows as its own thing:
+    a report-writing analyst or synthesizer, a debate participant, and the
+    portfolio manager. Each is looked up by node name in the tables from
+    ``api.events`` — this function never names an agent directly.
+    """
+    # Tool calls made by this node (only nodes with tools produce these).
+    for msg in update.get("messages", []) or []:
+        name = getattr(msg, "name", None)
+        if name:
+            yield ev.tool_finished(node, name)
+
+    # A report, when the node's update carries one with content. The check
+    # for a non-empty string is what filters out the interim updates during a
+    # tool-calling loop: the market analyst returns ``{"market_report": ""}``
+    # on every pass while it is still gathering data, and only the final pass
+    # returns actual text.
+    report_key = ev.REPORT_NODES.get(node)
+    if report_key:
+        value = update.get(report_key)
+        if isinstance(value, str) and value.strip():
+            yield ev.report(report_key, value)
+
+    # One debate turn, when the node is a debate participant. The update
+    # carries the whole transcript at that node's state key; the last turn
+    # is the one this node just added.
+    debate_info = ev.DEBATE_SPEAKERS.get(node)
+    if debate_info:
+        debate_key, _ = debate_info
+        transcript = (update.get(debate_key) or {}).get("transcript") or []
+        if transcript:
+            last = transcript[-1]
+            yield ev.debate_turn(debate_key, last["speaker"], last["content"])
+
+    # The final decision, when the node is the portfolio manager. Its update
+    # carries both the rendered markdown and the structured rating.
+    if node == "Portfolio Manager":
+        text = update.get("final_trade_decision") or ""
+        if text:
+            yield ev.decision(
+                {
+                    "final_rating": update.get("final_rating") or "",
+                    "final_trade_decision": text,
+                }
+            )

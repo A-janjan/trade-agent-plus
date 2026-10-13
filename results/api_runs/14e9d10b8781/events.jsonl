@@ -1,0 +1,2 @@
+{"type": "run.started", "ts": 1791914844.4186797, "run_id": "14e9d10b8781", "ticker": "NVDA", "trade_date": "2026-10-13", "models": {"provider": "openai", "quick": "gemini/gemini-3.1-flash-lite", "deep": "gemini/gemini-3.1-flash-lite"}}
+{"type": "run.failed", "ts": 1791914847.0118248, "run_id": "14e9d10b8781", "error": "'TradingGraph' object has no attribute 'astream'"}

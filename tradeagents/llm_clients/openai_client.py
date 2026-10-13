@@ -23,7 +23,7 @@ def create_openai_llm(
             "(see .env.example)."
         )
 
-    kwargs: dict = {"model": model, "api_key": api_key}
+    kwargs: dict = {"model": model, "api_key": api_key, "max_retries": 5}
     if config.get("backend_url"):
         kwargs["base_url"] = config["backend_url"]
     elif os.environ.get("OPENAI_BASE_URL"):

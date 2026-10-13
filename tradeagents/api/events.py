@@ -129,3 +129,16 @@ def decision(state: dict) -> dict:
 
 def settled(entries: list[dict]) -> dict:
     return {"type": "settled", "ts": _now(), "entries": entries}
+
+def run_state(state: dict) -> dict:
+    """The final full state, minus the message list.
+
+    Every report and turn has already been emitted as its own event; this is
+    a summary for consumers that want the whole picture at once, or that were
+    not connected for the incremental stream. ``messages`` is dropped because
+    it carries AIMessage objects whose ``additional_kwargs`` can hold parsed
+    Pydantic objects from structured-output calls — not JSON-serializable
+    without lossy conversion, and the frontend has no use for them.
+    """
+    sanitized = {k: v for k, v in state.items() if k != "messages"}
+    return {"type": "run.state", "ts": _now(), "state": sanitized}
