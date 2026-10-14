@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 
-
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse

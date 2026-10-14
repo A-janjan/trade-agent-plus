@@ -16,6 +16,7 @@ from typing import Any, Literal
 
 EventType = Literal[
     "run.started",
+    "run.state",
     "run.finished",
     "run.failed",
     "node.finished",
@@ -55,7 +56,13 @@ def _now() -> float:
     return time.time()
 
 
-def run_started(run_id: str, ticker: str, trade_date: str, models: dict) -> dict:
+def run_started(
+    run_id: str,
+    ticker: str,
+    trade_date: str,
+    models: dict,
+    selected_analysts: list[str] | None = None,
+) -> dict:
     return {
         "type": "run.started",
         "ts": _now(),
@@ -63,6 +70,7 @@ def run_started(run_id: str, ticker: str, trade_date: str, models: dict) -> dict
         "ticker": ticker,
         "trade_date": trade_date,
         "models": models,
+        "selected_analysts": selected_analysts or [],
     }
 
 
@@ -129,6 +137,7 @@ def decision(state: dict) -> dict:
 
 def settled(entries: list[dict]) -> dict:
     return {"type": "settled", "ts": _now(), "entries": entries}
+
 
 def run_state(state: dict) -> dict:
     """The final full state, minus the message list.

@@ -21,7 +21,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 from tradeagents.api import events as ev
 from tradeagents.graph.progress import stream_events
@@ -149,7 +149,7 @@ class RunManager:
             "deep": config.get("deep_think_llm"),
         }
         await handle.publish(
-            ev.run_started(handle.run_id, handle.ticker, handle.trade_date, models)
+            ev.run_started(handle.run_id, handle.ticker, handle.trade_date, models, selected_analysts=list(selected_analysts),)
         )
 
         try:

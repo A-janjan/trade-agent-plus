@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import json
-
 import pytest
 from fastapi.testclient import TestClient
 
 from tradeagents.api.main import create_app
-from tradeagents.dataflows.config import set_config, reset_config
+from tradeagents.dataflows.config import reset_config, set_config
 
 
 @pytest.fixture

@@ -13,11 +13,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from tradeagents.api.run_manager import RunManager
 from tradeagents.api.routers import backtests, decisions, runs
+from tradeagents.api.run_manager import RunManager
 from tradeagents.dataflows.config import get_config
 from tradeagents.default_config import DEFAULT_CONFIG
-from tradeagents.llm_clients import create_llm
 from tradeagents.memory.log import DecisionLog
 
 logger = logging.getLogger(__name__)
@@ -28,10 +27,15 @@ async def _lifespan(app: FastAPI):
     config = get_config() or DEFAULT_CONFIG.copy()
     app.state.config = config
     app.state.run_manager = RunManager(config)
+    # Backtests are intentionally process-local, just like live run handles.
+    # Initialize the registry here so the backtest router works in a fresh API
+    # process instead of failing on the first request.
+    app.state.backtests = {}
     app.state.decision_log = DecisionLog(config["memory_log_path"])
-    # A single LLM for settlement reflections; keeps the settle endpoint from
-    # constructing a new client per request.
-    app.state.settle_llm = create_llm(config, "quick")
+    # Construct the settlement LLM lazily. Health, history, and validation
+    # endpoints should remain usable in a fresh process before a provider key
+    # has been configured; the settle endpoint initializes it on demand.
+    app.state.settle_llm = None
     yield
 
 

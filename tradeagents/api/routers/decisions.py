@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/decisions", tags=["decisions"])
@@ -42,6 +42,15 @@ class SettleRequest(BaseModel):
 async def settle(request: Request, body: SettleRequest) -> dict:
     """Force a settlement pass. Useful in a UI to refresh outcomes on demand."""
     graph_llm = request.app.state.settle_llm
+    if graph_llm is None:
+        from tradeagents.llm_clients import create_llm
+
+        try:
+            graph_llm = create_llm(request.app.state.config, "quick")
+        except ValueError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        request.app.state.settle_llm = graph_llm
+
     log = _log(request)
     from tradeagents.memory.settlement import settle_pending
 
