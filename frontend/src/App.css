@@ -1292,3 +1292,134 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* Live activity -------------------------------------------------------- */
+.run-activity-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 57px;
+  margin-top: 18px;
+  padding: 10px 13px;
+  border: 1px solid rgba(105, 215, 193, 0.18);
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(105, 215, 193, 0.07), rgba(200, 250, 119, 0.025));
+}
+
+.activity-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--teal);
+  border: 1px solid rgba(105, 215, 193, 0.25);
+  border-radius: 8px;
+  background: rgba(105, 215, 193, 0.08);
+}
+
+.activity-running .activity-icon { color: var(--lime); border-color: rgba(200, 250, 119, 0.3); background: rgba(200, 250, 119, 0.08); animation: activity-pulse 1.7s ease-in-out infinite; }
+.activity-done { border-color: rgba(105, 215, 193, 0.24); }
+.activity-done .activity-icon { color: var(--teal); }
+.activity-failed { border-color: rgba(255, 142, 145, 0.24); background: rgba(255, 142, 145, 0.05); }
+.activity-failed .activity-icon { color: var(--red); border-color: rgba(255, 142, 145, 0.25); background: rgba(255, 142, 145, 0.08); }
+
+.activity-copy { display: flex; flex: 0 1 330px; flex-direction: column; gap: 4px; min-width: 0; }
+.activity-copy strong { overflow: hidden; color: var(--text); font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.activity-copy small { overflow: hidden; color: var(--muted); font-family: var(--font-mono); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.activity-copy small span { margin: 0 5px; color: var(--quiet); }
+.activity-meter { flex: 1 1 auto; min-width: 80px; height: 4px; overflow: hidden; border-radius: 999px; background: rgba(175, 220, 209, 0.1); }
+.activity-meter > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--teal), var(--lime)); transition: width 320ms ease; }
+.activity-count { flex: 0 0 auto; color: var(--quiet); font-family: var(--font-mono); font-size: 9px; }
+
+@keyframes activity-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(200, 250, 119, 0); } 50% { box-shadow: 0 0 0 5px rgba(200, 250, 119, 0.07); } }
+
+/* Markdown output ----------------------------------------------------- */
+.markdown-content {
+  color: #b9c7c4;
+  font-size: 12px;
+  line-height: 1.72;
+  overflow-wrap: anywhere;
+}
+
+.markdown-content > :first-child { margin-top: 0; }
+.markdown-content > :last-child { margin-bottom: 0; }
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  margin: 1.25em 0 0.48em;
+  color: var(--text);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.25;
+}
+.markdown-content h1 { font-size: 1.35em; }
+.markdown-content h2 { font-size: 1.18em; }
+.markdown-content h3,
+.markdown-content h4 { font-size: 1.04em; }
+.markdown-content p { margin: 0.72em 0; }
+.markdown-content strong { color: #e6f2e9; font-weight: 700; }
+.markdown-content em { color: #c9d7d1; }
+.markdown-content ul,
+.markdown-content ol { margin: 0.75em 0; padding-left: 1.45em; }
+.markdown-content li { margin: 0.28em 0; padding-left: 0.15em; }
+.markdown-content li::marker { color: var(--teal); }
+.markdown-content blockquote { margin: 0.9em 0; padding: 0.1em 0 0.1em 13px; color: #9eafac; border-left: 2px solid var(--teal); }
+.markdown-content hr { margin: 1.25em 0; border: 0; border-top: 1px solid var(--line); }
+.markdown-content a { color: var(--teal); text-decoration: underline; text-decoration-color: rgba(105, 215, 193, 0.35); text-underline-offset: 3px; }
+.markdown-content a:hover { color: var(--lime); }
+.markdown-code {
+  padding: 2px 5px;
+  color: var(--lime);
+  font-family: var(--font-mono);
+  font-size: 0.91em;
+  border: 1px solid rgba(200, 250, 119, 0.14);
+  border-radius: 4px;
+  background: rgba(200, 250, 119, 0.06);
+}
+.markdown-code-block {
+  margin: 0.9em 0;
+  padding: 12px 13px;
+  overflow-x: auto;
+  color: #b7cfca;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  line-height: 1.65;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(5, 10, 12, 0.56);
+}
+.markdown-code-block .markdown-code { padding: 0; color: inherit; border: 0; background: transparent; }
+.markdown-table-wrap { margin: 0.95em 0; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+.markdown-content table { width: 100%; min-width: 410px; border-collapse: collapse; font-size: 0.92em; }
+.markdown-content th { color: #dce9df; font-weight: 650; text-align: left; background: rgba(105, 215, 193, 0.08); }
+.markdown-content th,
+.markdown-content td { padding: 8px 10px; vertical-align: top; border-bottom: 1px solid rgba(158, 190, 192, 0.1); }
+.markdown-content tr:last-child td { border-bottom: 0; }
+.markdown-content-compact { font-size: 11px; line-height: 1.65; }
+.markdown-content-compact h1 { font-size: 1.22em; }
+.markdown-content-compact h2 { font-size: 1.1em; }
+
+.decision-text { white-space: normal; }
+.decision-text .markdown-content { color: #c4d0cb; font-size: 12px; }
+.report-content { max-height: 480px; overflow: auto; }
+.report-content .markdown-content { color: #b9c7c4; font-size: 11px; }
+.report-content pre.markdown-code-block { max-height: none; margin: 0.9em 0; }
+.debate-turn .markdown-content { margin-top: 8px; color: #b9c7c4; }
+.stream-window { overflow: auto; }
+.stream-markdown { color: #9eafac; }
+.stream-markdown .markdown-content { color: #9eafac; font-family: var(--font-mono); font-size: 10px; line-height: 1.7; }
+.stream-markdown .markdown-content h1,
+.stream-markdown .markdown-content h2,
+.stream-markdown .markdown-content h3,
+.stream-markdown .markdown-content strong { color: #c3d7c5; }
+.stream-markdown .markdown-code { color: var(--lime); }
+
+@media (max-width: 700px) {
+  .run-activity-strip { align-items: flex-start; flex-wrap: wrap; }
+  .activity-copy { flex: 1 1 calc(100% - 48px); }
+  .activity-meter { flex: 1 1 calc(100% - 73px); margin-left: 44px; }
+  .activity-count { margin-top: 1px; }
+  .decision-footer span { font-size: 9px; }
+}

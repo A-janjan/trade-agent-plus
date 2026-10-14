@@ -66,7 +66,7 @@ export default function RecentRuns() {
                             <span className="recent-symbol">{run.ticker.slice(0, 1)}</span>
                             <span className="recent-main">
                                 <strong>{run.ticker}</strong>
-                                <small>{formatDate(run.trade_date)} · {run.event_count} events</small>
+                                <small>{formatDate(run.trade_date)} · {run.asset_type}</small>
                             </span>
                             <span className={`status-dot status-dot-${run.status}`} />
                             <span className="recent-status">

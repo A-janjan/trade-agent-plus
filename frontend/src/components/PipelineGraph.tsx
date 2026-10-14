@@ -24,9 +24,10 @@ interface Props {
     finished: Set<string>;
     current: string | null;
     status: "running" | "done" | "failed";
+    connected: boolean;
 }
 
-export default function PipelineGraph({ selectedAnalysts, finished, current, status }: Props) {
+export default function PipelineGraph({ selectedAnalysts, finished, current, status, connected }: Props) {
     const stages = useMemo(
         () => [
             ...selectedAnalysts.map((key) => {
@@ -76,7 +77,7 @@ export default function PipelineGraph({ selectedAnalysts, finished, current, sta
             </ol>
             <div className="pipeline-footer">
                 <span className={`pipeline-state pipeline-state-${status}`}><span />{status === "running" ? "Live analysis" : status === "done" ? "Run complete" : "Run failed"}</span>
-                <span className="pipeline-live-label">SSE connected</span>
+                <span className="pipeline-live-label">{connected ? "SSE connected" : status === "done" ? "Replay complete" : status === "failed" ? "Stream closed" : "Reconnecting"}</span>
             </div>
         </section>
     );

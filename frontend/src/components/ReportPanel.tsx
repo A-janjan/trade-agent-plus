@@ -1,4 +1,5 @@
 import Icon, { type IconName } from "./Icon";
+import MarkdownContent from "./MarkdownContent";
 
 const REPORTS: { key: string; title: string; phase: string; icon: IconName }[] = [
     { key: "market_report", title: "Market Analyst", phase: "Analyst team", icon: "trend" },
@@ -37,7 +38,7 @@ export default function ReportPanel({ reports }: { reports: Record<string, strin
                                 <span className="report-summary-meta">{reports[report.key].length.toLocaleString()} chars</span>
                                 <Icon name="chevronDown" size={16} className="report-chevron" />
                             </summary>
-                            <div className="report-content"><pre>{reports[report.key]}</pre></div>
+                            <div className="report-content"><MarkdownContent content={reports[report.key]} /></div>
                         </details>
                     ))}
                 </div>

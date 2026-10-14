@@ -1,5 +1,6 @@
-import Icon from "./Icon";
 import type { RunStatus } from "../types";
+import Icon from "./Icon";
+import MarkdownContent from "./MarkdownContent";
 
 function ratingTone(rating: string | null) {
     if (!rating) return "neutral";
@@ -19,11 +20,20 @@ interface Props {
     text: string;
     elapsed: number | null;
     status: RunStatus;
-    eventCount: number;
+    stageProgress: { completed: number; total: number };
+    evidenceCount: number;
     error?: string | null;
 }
 
-export default function DecisionCard({ rating, text, elapsed, status, eventCount, error }: Props) {
+export default function DecisionCard({
+    rating,
+    text,
+    elapsed,
+    status,
+    stageProgress,
+    evidenceCount,
+    error,
+}: Props) {
     const tone = ratingTone(rating);
     const isPending = status === "running" && !rating && !text;
     const title = status === "failed" ? "Run stopped" : rating ?? (isPending ? "Decision in progress" : "No rating returned");
@@ -52,11 +62,12 @@ export default function DecisionCard({ rating, text, elapsed, status, eventCount
                 </div>
             </div>
 
-            {text && <pre className="decision-text">{text}</pre>}
+            {text && <div className="decision-text"><MarkdownContent content={text} /></div>}
 
             <div className="decision-footer">
                 <span><Icon name="clock" size={14} /> {formatElapsed(elapsed)}</span>
-                <span><Icon name="activity" size={14} /> {eventCount} stream events</span>
+                <span><Icon name="layers" size={14} /> {stageProgress.completed}/{stageProgress.total} stages</span>
+                <span><Icon name="fileText" size={14} /> {evidenceCount} evidence artifacts</span>
                 <span className="decision-footer-note">Evidence before conviction</span>
             </div>
         </section>

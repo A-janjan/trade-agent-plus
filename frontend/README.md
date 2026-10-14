@@ -6,8 +6,8 @@ The `frontend/` folder is the live research workspace for [tradeagents](../READM
 
 - **New research run** — choose a ticker, point-in-time date, and research lenses.
 - **Live pipeline** — analysts, debates, trader, risk reviewers, and the portfolio manager light up as they finish.
-- **Streaming output** — the active node's response is pinned to a rolling preview.
-- **Decision card** — the final rating, thesis, elapsed time, and event count stay visible.
+- **Streaming output** — the active node's response is pinned to a rolling, Markdown-formatted preview.
+- **Decision card** — the final rating, thesis, elapsed time, stage progress, and evidence count stay visible.
 - **Evidence archive** — reports and debate transcripts remain expandable after the run completes.
 - **Workspace history** — recent runs are fetched from `GET /api/runs` and link back to their SSE replay.
 

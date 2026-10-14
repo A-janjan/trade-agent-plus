@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import DecisionCard from "../components/DecisionCard";
 import Icon from "../components/Icon";
+import MarkdownContent from "../components/MarkdownContent";
 import PipelineGraph from "../components/PipelineGraph";
 import ReportPanel from "../components/ReportPanel";
 import TokenPreview from "../components/TokenPreview";
@@ -15,6 +16,21 @@ const ANALYST_NAMES: Record<string, string> = {
     news: "News Analyst",
     fundamentals: "Fundamentals Analyst",
 };
+const TOOL_NODE_TO_STAGE: Record<string, string> = {
+    tools_market: "Market Analyst",
+    tools_news: "News Analyst",
+    tools_fundamentals: "Fundamentals Analyst",
+};
+const POST_STAGE_NAMES = [
+    "Upside Case",
+    "Downside Case",
+    "Investment Lead",
+    "Trader",
+    "Growth Advocate",
+    "Capital Steward",
+    "Balanced Reviewer",
+    "Portfolio Manager",
+];
 const REPORT_KEYS = [
     "market_report",
     "sentiment_report",
@@ -24,6 +40,22 @@ const REPORT_KEYS = [
     "trader_investment_plan",
     "final_trade_decision",
 ];
+const REPORT_NODE_BY_KEY: Record<string, string> = {
+    market_report: "Market Analyst",
+    sentiment_report: "Sentiment Analyst",
+    news_report: "News Analyst",
+    fundamentals_report: "Fundamentals Analyst",
+    investment_plan: "Investment Lead",
+    trader_investment_plan: "Trader",
+    final_trade_decision: "Portfolio Manager",
+};
+const SPEAKER_NODE_BY_KEY: Record<string, string> = {
+    upside: "Upside Case",
+    downside: "Downside Case",
+    growth: "Growth Advocate",
+    capital: "Capital Steward",
+    balanced: "Balanced Reviewer",
+};
 const DEBATE_LABEL: Record<string, string> = {
     research_debate: "Research debate",
     risk_debate: "Risk debate",
@@ -48,7 +80,10 @@ export default function RunPage() {
     const derived = useMemo(() => derive(events), [events]);
 
     const statusLabel = connected ? "Live stream" : done ? "Stream closed" : streamError ?? "Connecting…";
-    const progressPercent = derived.totalStages ? Math.round((derived.finishedNodes.size / derived.totalStages) * 100) : 0;
+    const progressPercent = derived.totalStages
+        ? Math.min(100, Math.round((derived.completedStageCount / derived.totalStages) * 100))
+        : 0;
+    const evidenceCount = derived.reportCount + derived.debateTurns.length;
 
     return (
         <div className="app-page run-page">
@@ -69,13 +104,23 @@ export default function RunPage() {
                         <p>{derived.tradeDate ? formatDate(derived.tradeDate) : "Connecting to the research room"} <span className="hero-separator">·</span> {derived.selectedAnalysts.length} research lenses <span className="hero-separator">·</span> {derived.currentPhase}</p>
                     </div>
                     <div className="run-hero-stats">
-                        <div className="run-stat"><span>Pipeline</span><strong>{progressPercent}%</strong><small>{derived.finishedNodes.size}/{derived.totalStages} nodes</small></div>
-                        <div className="run-stat"><span>Events</span><strong>{events.length}</strong><small>captured live</small></div>
+                        <div className="run-stat"><span>Stages</span><strong>{derived.completedStageCount}/{derived.totalStages}</strong><small>{progressPercent}% complete</small></div>
+                        <div className="run-stat"><span>Evidence</span><strong>{derived.reportCount}</strong><small>{derived.debateTurns.length} debate turns</small></div>
                     </div>
                 </section>
 
                 {streamError && !done && <div className="stream-warning" role="status"><Icon name="refresh" size={16} /><span>{streamError}</span></div>}
                 {derived.failure && <div className="stream-warning stream-warning-error" role="alert"><Icon name="alert" size={16} /><span>{derived.failure}</span></div>}
+
+                <div className={`run-activity-strip activity-${derived.status}`}>
+                    <span className="activity-icon"><Icon name="pulse" size={17} /></span>
+                    <div className="activity-copy">
+                        <strong>{connected ? "Analysis streaming live" : done ? "Analysis complete" : derived.status === "failed" ? "Analysis stopped" : "Preparing the research room"}</strong>
+                        <small>{derived.currentNode ?? "Waiting for the next stage"} <span>·</span> {derived.currentPhase}</small>
+                    </div>
+                    <div className="activity-meter" aria-label={`${progressPercent}% of pipeline stages complete`}><span style={{ width: `${progressPercent}%` }} /></div>
+                    <span className="activity-count">{derived.completedStageCount}/{derived.totalStages} stages</span>
+                </div>
 
                 <div className="run-layout">
                     <aside className="run-sidebar">
@@ -84,6 +129,7 @@ export default function RunPage() {
                             finished={derived.finishedNodes}
                             current={derived.currentNode}
                             status={derived.status}
+                            connected={connected}
                         />
                         <div className="run-context panel">
                             <div className="eyebrow"><Icon name="database" size={14} /> Run context</div>
@@ -102,7 +148,8 @@ export default function RunPage() {
                             text={derived.decisionText}
                             elapsed={derived.elapsed}
                             status={derived.status}
-                            eventCount={events.length}
+                            stageProgress={{ completed: derived.completedStageCount, total: derived.totalStages }}
+                            evidenceCount={evidenceCount}
                             error={derived.failure}
                         />
                         <TokenPreview text={derived.liveText} node={derived.currentNode} />
@@ -144,23 +191,38 @@ function derive(events: StreamEvent[]) {
                 tradeDate = event.trade_date;
                 if (event.selected_analysts) selectedAnalysts = event.selected_analysts;
                 break;
-            case "token":
-                liveTextByNode[event.node] = (liveTextByNode[event.node] ?? "") + event.text;
-                currentNode = event.node;
+            case "token": {
+                const node = normalizePipelineNode(event.node);
+                liveTextByNode[node] = (liveTextByNode[node] ?? "") + event.text;
+                currentNode = node;
                 break;
-            case "node.finished":
-                finishedNodes.add(event.node);
-                if (currentNode === event.node) currentNode = null;
+            }
+            case "tool.started":
+                currentNode = normalizePipelineNode(event.node);
                 break;
+            case "tool.finished":
+                // Keep the analyst active: it may immediately make another
+                // tool call or stream its final response after the tool returns.
+                currentNode = normalizePipelineNode(event.node);
+                break;
+            case "node.finished": {
+                const node = normalizePipelineNode(event.node);
+                finishedNodes.add(node);
+                if (currentNode === node) currentNode = null;
+                break;
+            }
             case "report":
                 reports[event.key] = event.content;
+                currentNode = REPORT_NODE_BY_KEY[event.key] ?? currentNode;
                 break;
             case "debate.turn":
                 debateTurns.push({ debate: event.debate, speaker: event.speaker, content: event.content });
+                currentNode = SPEAKER_NODE_BY_KEY[event.speaker] ?? currentNode;
                 break;
             case "decision":
                 rating = event.rating;
                 decisionText = event.text;
+                currentNode = "Portfolio Manager";
                 break;
             case "run.state": {
                 const state = event.state;
@@ -175,28 +237,34 @@ function derive(events: StreamEvent[]) {
                 rating = event.rating ?? rating;
                 elapsed = event.elapsed_seconds;
                 status = "done";
+                currentNode = null;
                 break;
             case "run.failed":
                 failure = event.error;
                 status = "failed";
+                currentNode = null;
                 break;
             default:
                 break;
         }
     }
 
+    const selectedStageNames = selectedAnalysts.map((key) => ANALYST_NAMES[key] ?? key);
+    const stageNames = new Set([...selectedStageNames, ...POST_STAGE_NAMES]);
+    const completedStages = new Set([...finishedNodes].filter((node) => stageNames.has(node)));
+    const completedStageCount = completedStages.size;
+    const totalStages = stageNames.size;
     const currentLive = currentNode ? liveTextByNode[currentNode] ?? "" : "";
-    const postStages = 8;
-    const totalStages = selectedAnalysts.length + postStages;
-    const currentPhase = phaseForNode(currentNode);
 
     return {
         selectedAnalysts,
-        finishedNodes,
+        finishedNodes: completedStages,
+        completedStageCount,
         totalStages,
         currentNode,
-        currentPhase,
+        currentPhase: phaseForNode(currentNode, status),
         reports,
+        reportCount: Object.keys(reports).length,
         debateTurns,
         liveText: currentLive.slice(-2400),
         rating,
@@ -209,8 +277,16 @@ function derive(events: StreamEvent[]) {
     };
 }
 
-function phaseForNode(node: string | null) {
-    if (!node) return "waiting for next stage";
+function normalizePipelineNode(node: string) {
+    return TOOL_NODE_TO_STAGE[node] ?? node;
+}
+
+function phaseForNode(node: string | null, status: RunStatus) {
+    if (!node) {
+        if (status === "done") return "decision complete";
+        if (status === "failed") return "run stopped";
+        return "initializing pipeline";
+    }
     if (Object.values(ANALYST_NAMES).includes(node)) return "analyst team";
     if (["Upside Case", "Downside Case", "Investment Lead"].includes(node)) return "research debate";
     if (["Growth Advocate", "Capital Steward", "Balanced Reviewer", "Portfolio Manager"].includes(node)) return "risk debate";
@@ -242,7 +318,7 @@ function DebateColumns({ turns }: { turns: DebateTurn[] }) {
                             {list.map((turn, index) => (
                                 <div className="debate-turn" key={`${turn.speaker}-${index}`}>
                                     <div className="debate-turn-meta"><span className="turn-number">0{index + 1}</span><strong>{SPEAKER_LABEL[turn.speaker] ?? turn.speaker}</strong></div>
-                                    <p>{turn.content}</p>
+                                    <MarkdownContent content={turn.content} compact />
                                 </div>
                             ))}
                         </div>
