@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="820" viewBox="0 0 1600 820" role="img" aria-labelledby="title desc">
+  <title id="title">tradeagents multi-agent research architecture</title>
+  <desc id="desc">A diagram showing market data flowing through analyst lenses, research and risk debates, a portfolio manager, and a memory loop.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#091016"/><stop offset="1" stop-color="#101923"/></linearGradient>
+    <linearGradient id="lime" x1="0" x2="1"><stop stop-color="#68d7c1"/><stop offset="1" stop-color="#c8fa77"/></linearGradient>
+    <linearGradient id="violet" x1="0" x2="1"><stop stop-color="#829dfb"/><stop offset="1" stop-color="#c18eff"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="7" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <pattern id="grid" width="54" height="54" patternUnits="userSpaceOnUse"><path d="M54 0H0V54" fill="none" stroke="#b1d9d3" stroke-opacity=".055"/></pattern>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#9fd9c6"/></marker>
+  </defs>
+  <rect width="1600" height="820" rx="28" fill="url(#bg)"/>
+  <rect width="1600" height="820" rx="28" fill="url(#grid)"/>
+  <circle cx="1330" cy="80" r="250" fill="#63d8c2" opacity=".05" filter="url(#glow)"/>
+  <text x="88" y="85" fill="#c8fa77" font-family="ui-monospace, monospace" font-size="15" letter-spacing="3">TRADEAGENTS / RESEARCH GRAPH</text>
+  <text x="88" y="132" fill="#f0f7f2" font-family="Arial, sans-serif" font-size="36" font-weight="600">Evidence moves through independent rooms.</text>
+  <text x="88" y="164" fill="#8fa3a6" font-family="Arial, sans-serif" font-size="16">Every handoff is visible, challengeable, and recorded.</text>
+
+  <g font-family="Arial, sans-serif">
+    <rect x="88" y="245" width="190" height="108" rx="14" fill="#16242a" stroke="#527a79"/>
+    <text x="110" y="274" fill="#68d7c1" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.5">INPUT</text>
+    <text x="110" y="309" fill="#f0f7f2" font-size="21" font-weight="600">Ticker + date</text>
+    <text x="110" y="332" fill="#8fa3a6" font-size="13">Point-in-time context</text>
+
+    <rect x="348" y="203" width="422" height="193" rx="18" fill="#111c22" stroke="#315c5d"/>
+    <text x="376" y="237" fill="#c8fa77" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.4">01 / ANALYST TEAM</text>
+    <g>
+      <rect x="376" y="264" width="176" height="51" rx="9" fill="#1b2a2e" stroke="#2e5657"/><text x="395" y="296" fill="#ebf5ef" font-size="15">Market</text><circle cx="531" cy="289" r="5" fill="#c8fa77"/>
+      <rect x="569" y="264" width="176" height="51" rx="9" fill="#1b2a2e" stroke="#2e5657"/><text x="588" y="296" fill="#ebf5ef" font-size="15">Sentiment</text><circle cx="724" cy="289" r="5" fill="#68d7c1"/>
+      <rect x="376" y="329" width="176" height="51" rx="9" fill="#1b2a2e" stroke="#2e5657"/><text x="395" y="361" fill="#ebf5ef" font-size="15">News</text><circle cx="531" cy="354" r="5" fill="#829dfb"/>
+      <rect x="569" y="329" width="176" height="51" rx="9" fill="#1b2a2e" stroke="#2e5657"/><text x="588" y="361" fill="#ebf5ef" font-size="15">Fundamentals</text><circle cx="724" cy="354" r="5" fill="#c18eff"/>
+    </g>
+
+    <rect x="838" y="203" width="316" height="193" rx="18" fill="#151d30" stroke="#4c5686"/>
+    <text x="866" y="237" fill="#a8b9ff" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.4">02 / RESEARCH DEBATE</text>
+    <text x="866" y="284" fill="#f0f7f2" font-size="20" font-weight="600">Upside ↔ downside</text>
+    <text x="866" y="315" fill="#9ba7bf" font-size="14">Analyst evidence becomes a</text>
+    <text x="866" y="337" fill="#9ba7bf" font-size="14">thesis under pressure.</text>
+    <rect x="866" y="357" width="166" height="5" rx="2.5" fill="#829dfb"/><rect x="1043" y="357" width="82" height="5" rx="2.5" fill="#394467"/>
+
+    <rect x="1222" y="203" width="290" height="193" rx="18" fill="#19271e" stroke="#4d7651"/>
+    <text x="1250" y="237" fill="#c8fa77" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.4">03 / ACTION</text>
+    <text x="1250" y="284" fill="#f0f7f2" font-size="20" font-weight="600">Trader proposal</text>
+    <text x="1250" y="315" fill="#9eb49c" font-size="14">Action · entry · stop · size</text>
+    <path d="M1250 353h210" stroke="#385c3d"/><circle cx="1285" cy="353" r="5" fill="#c8fa77"/><circle cx="1365" cy="353" r="5" fill="#c8fa77"/><circle cx="1447" cy="353" r="5" fill="#c8fa77"/>
+
+    <rect x="510" y="505" width="540" height="166" rx="18" fill="#1a1829" stroke="#655386"/>
+    <text x="543" y="540" fill="#c18eff" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.4">04 / RISK DEBATE</text>
+    <text x="543" y="582" fill="#f0f7f2" font-size="20" font-weight="600">Growth · capital · balanced</text>
+    <text x="543" y="612" fill="#afa4c1" font-size="14">Three reviewers test whether the plan</text>
+    <text x="543" y="633" fill="#afa4c1" font-size="14">deserves its risk budget.</text>
+    <path d="M895 573c35 0 63 18 63 42s-28 42-63 42" fill="none" stroke="#c18eff" stroke-opacity=".6" stroke-width="2"/>
+
+    <rect x="1160" y="505" width="352" height="166" rx="18" fill="#202c1b" stroke="#708e4a"/>
+    <text x="1192" y="540" fill="#c8fa77" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.4">05 / FINAL CALL</text>
+    <text x="1192" y="588" fill="#f0f7f2" font-size="29" font-weight="600">Strong Buy … Sell</text>
+    <text x="1192" y="620" fill="#b3c79e" font-size="14">Rating + thesis + audit trail</text>
+    <circle cx="1447" cy="580" r="28" fill="#c8fa77" fill-opacity=".15" stroke="#c8fa77"/><path d="m1433 580 9 9 17-20" fill="none" stroke="#c8fa77" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="88" y="555" width="295" height="116" rx="16" fill="#111b20" stroke="#315c5d"/>
+    <text x="117" y="589" fill="#68d7c1" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.2">MEMORY LOOP</text>
+    <text x="117" y="624" fill="#f0f7f2" font-size="17" font-weight="600">Log → settle → reflect</text>
+    <text x="117" y="649" fill="#8fa3a6" font-size="13">Past outcomes inform the next run.</text>
+  </g>
+
+  <g fill="none" stroke="url(#lime)" stroke-width="2" marker-end="url(#arrow)" stroke-linecap="round">
+    <path d="M278 299h61"/>
+    <path d="M770 299h60"/>
+    <path d="M1154 299h61"/>
+    <path d="M1366 396v97"/>
+    <path d="M1050 588h101"/>
+    <path d="M510 588H383"/>
+    <path d="M235 555V430c0-35 28-65 63-65h30"/>
+  </g>
+  <circle cx="307" cy="299" r="4" fill="#c8fa77" filter="url(#glow)"/><circle cx="800" cy="299" r="4" fill="#c8fa77" filter="url(#glow)"/><circle cx="1185" cy="299" r="4" fill="#c8fa77" filter="url(#glow)"/>
+</svg>

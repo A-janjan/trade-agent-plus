@@ -2,149 +2,81 @@
 
 # tradeagents
 
-**A multi-agent LLM research framework for equity and crypto markets.**
+**Multi-agent market research for decisions you can actually inspect.**
 
-Four analysts investigate. Two researchers challenge the evidence. A trader proposes an action, three risk reviewers stress-test it, and a portfolio manager makes the final call.
+Four independent analysts gather evidence. Two adversarial debates challenge it. A trader turns the thesis into an action plan. Three risk reviewers pressure-test the plan before a portfolio manager makes the final call.
 
-Every decision is recorded, evaluated once its holding window has elapsed, and used as context for later runs on the same ticker.
-
-[Quick start](#quick-start) · [Architecture](#how-it-works) · [Providers](#supported-llm-providers) · [CLI](#cli-usage) · [Python API](#python-api) · [Web UI](#web-ui) · [Data & memory](#data-vendors) · [Backtesting](#backtesting) · [Configuration](#configuration) · [Development](#development)
+[Quick start](#quick-start) · [How it works](#how-it-works) · [Web workspace](#web-workspace) · [Providers](#supported-llm-providers) · [Data and memory](#data-and-memory) · [Backtesting](#backtesting) · [Development](#development)
 
 </div>
 
----
+<p align="center">
+  <img src="docs/ui-overview.svg" alt="tradeagents web workspace overview" width="920">
+</p>
 
-## What this is
+> **Research tool, not an execution system.** `tradeagents` produces a rating, thesis, supporting evidence, and an auditable report trail. It does not route orders, simulate fills, or maintain a live position ledger.
 
-`tradeagents` is a research framework for examining how large language models reason about markets when independent analysts and adversarial debates challenge one another's conclusions.
+## Why tradeagents?
 
-Each run takes a ticker and an analysis date, produces four independent
+Market analysis is often presented as a single confident paragraph. `tradeagents` keeps the reasoning visible instead: independent specialists work from point-in-time data, opposing cases are written into a transcript, and the final stance is structured rather than inferred from prose.
 
-analyst reports, runs an adversarial debate over them, converts the verdict
+A run gives you:
 
-into a transaction proposal, then holds a second debate about the proposal's
-
-risk. The final rating is logged. Once the holding window has traded, the
-
-outcome is measured against a regional benchmark and reflected on — and the
-
-reflection is injected into the next run for the same ticker.
-
-**This is a research and decision-evaluation tool, not an execution system.** It does not route orders, simulate fills, or maintain a live position ledger. It produces a rating, thesis, supporting evidence, and an auditable report trail.
-
-### What's inside
-
-| Layer | What it does |
-|---|---|
-| **Analysts** | Market (technical), Sentiment (social + news), News (events + macro), Fundamentals (statements) |
-| **Research debate** | Upside case vs. downside case, both grounded in the analyst reports |
-| **Investment Lead** | Synthesizes the debate into a 5-tier stance with risks and catalysts |
-| **Trader** | Converts the stance into a concrete action with entry, stop, sizing |
-| **Risk debate** | Growth Advocate vs. Capital Steward vs. Balanced Reviewer |
-| **Portfolio Manager** | Issues the final rating, executive summary, and thesis |
-| **Memory** | Every decision logged, settled, reflected on, and re-injected |
-| **Backtest** | Grid runner and scoring by rating |
-| **API + Web UI** | Live streaming view over SSE, decision history, backtest dashboard |
-| **Observability** | Optional Langfuse tracing of every node, LLM call, and tool call |
----
+- **Independent evidence** — market, sentiment, news, and fundamentals lenses can be selected independently.
+- **Adversarial reasoning** — upside and downside researchers debate the evidence before a plan is drafted.
+- **Risk-aware action** — a trader proposes action, entry, stop, and sizing; growth, capital, and balanced reviewers challenge it.
+- **A durable artifact** — reports, debate turns, tool calls, decisions, settlements, and reflections are written to disk.
+- **Live visibility** — the terminal and web workspace show progress while the graph is running, not only after it finishes.
 
 ## How it works
 
-```
-                     ┌──────────────────────────────────────────────┐
-                     │               Analyst Team                   │
-                     │                                              │
-  ┌──────────┐       │   ┌─────────┐  ┌──────────┐  ┌──────────┐   │
-  │  ticker  │──────▶│   │ Market  │  │Sentiment │  │   News   │   │
-  │   date   │       │   └────┬────┘  └────┬─────┘  └────┬─────┘   │
-  └──────────┘       │        │            │             │         │
-                     │        ▼            ▼             ▼         │
-                     │   ┌───────────────────────────────────┐    │
-                     │   │        Fundamentals               │    │
-                     │   └───────────────┬───────────────────┘    │
-                     └───────────────────┼────────────────────────┘
-                                         │
-                     ┌───────────────────▼────────────────────────┐
-                     │            Research Debate                 │
-                     │    ┌────────────┐      ┌────────────┐      │
-                     │    │Upside Case │◀────▶│Downside C. │      │
-                     │    └─────┬──────┘      └──────┬─────┘      │
-                     │          └────────┬───────────┘            │
-                     │                   ▼                        │
-                     │          ┌─────────────────┐               │
-                     │          │ Investment Lead │               │
-                     │          └────────┬────────┘               │
-                     └───────────────────┼────────────────────────┘
-                                         │
-                     ┌───────────────────▼────────────────────────┐
-                     │              Trader                        │
-                     │  Action · Entry · Stop · Sizing            │
-                     └───────────────────┬────────────────────────┘
-                                         │
-                     ┌───────────────────▼────────────────────────┐
-                     │             Risk Debate                    │
-                     │  Growth ◀──▶ Capital ◀──▶ Balanced         │
-                     │                   │                        │
-                     │          ┌────────▼────────┐               │
-                     │          │Portfolio Manager│               │
-                     │          └────────┬────────┘               │
-                     └───────────────────┼────────────────────────┘
-                                         │
-                                         ▼
-                            ╔════════════════════════╗
-                            ║   Final Decision       ║
-                            ║   Strong Buy … Sell    ║
-                            ╚════════════┬═══════════╝
-                                         │
-                                         ▼
-                     ┌───────────────────────────────────────────┐
-                     │  Memory: log · settle · reflect · inject  │
-                     └───────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="docs/architecture.svg" alt="tradeagents architecture diagram" width="100%">
+</p>
 
-Two design choices drive most of the rest:
+The pipeline is assembled from registries and shared debate machinery rather than one-off orchestration code:
 
-**The debate machinery is generic.** A debate is an ordered list of
+1. **Analyst team** — selected analysts collect data through the vendor router and write reports.
+2. **Research debate** — an upside case and a downside case challenge those reports; the Investment Lead synthesizes the result.
+3. **Trader** — the thesis becomes a concrete investment plan.
+4. **Risk debate** — Growth Advocate, Capital Steward, and Balanced Reviewer test the plan from different risk perspectives.
+5. **Portfolio Manager** — emits a typed rating and a readable final decision.
+6. **Memory loop** — decisions are logged, settled after their holding window, reflected on, and injected into future runs for the same ticker.
 
-participants and a transcript. Round numbers are derived from position; the
-
-next speaker is derived from the last entry. The same module runs the
-
-two-sided research debate and the three-sided risk debate; a third debate
-
-would be a new participant list, not new code.
-
-**The decision log is the results table.** A run records its decision.
-
-A later run settles it with realized return and alpha. Scoring reads what
-
-the log already contains. Nothing is duplicated.
-
----
+The debate transcript is the state. Round numbers are derived from the ordered turns, so the same generic machinery can support a two-sided research debate, a three-sided risk debate, or another participant list later.
 
 ## Quick start
 
 ### Prerequisites
 
 - Python 3.11 or newer
-
-- An API key for one supported LLM provider (OpenAI is the default)
-
-- Optional: `FRED_API_KEY`, `ALPHA_VANTAGE_API_KEY`, `TYPESAFE_API_KEY`
+- An API key for one supported LLM provider; OpenAI is the default
+- Node.js 20+ and npm for the web workspace
+- Optional data keys: `FRED_API_KEY`, `ALPHA_VANTAGE_API_KEY`, `TYPESAFE_API_KEY`
 
 ### Install
 
 ```bash
-git clone https\://github.com/a-janjan/tradeagents.git
+git clone https://github.com/a-janjan/tradeagents.git
 cd tradeagents
-\# with uv (recommended)
+
+# uv (recommended)
 uv venv --python 3.12
 source .venv/bin/activate
-uv pip install -e ".[dev]"
-\# or with plain pip
+uv pip install -e ".[dev,api]"
+
+# or plain pip
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,api]"
+```
+
+Install the frontend dependencies once:
+
+```bash
+cd frontend
+npm install
+cd ..
 ```
 
 ### Configure
@@ -153,764 +85,298 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-Then edit `.env` and set at least:
+Set at least one model provider key, for example:
 
 ```bash
 OPENAI_API_KEY=sk-...
 ```
 
-### Run
+The rest of the configuration lives in `tradeagents/default_config.py` and can be overridden by environment variables or a caller-provided config dictionary.
+
+### Run from the CLI
 
 ```bash
-\# one analysis, live progress in the terminal
-python -m tradeagents NVDA 2026-09-01
-\# save the report tree to disk
-python -m tradeagents NVDA 2026-09-01 --save
-\# with only the market and news analysts
-python -m tradeagents NVDA 2026-09-01 --analysts=market,news
+# one analysis with live terminal progress
+python -m tradeagents NVDA 2026-10-01
+
+# save the report tree to results/reports/
+python -m tradeagents NVDA 2026-10-01 --save
+
+# focus the run on two lenses
+python -m tradeagents NVDA 2026-10-01 --analysts=market,news
 ```
 
-### See the web UI
+### Run the API and web workspace
+
+Terminal one:
 
 ```bash
-\# terminal 1: the API
 uvicorn tradeagents.api.main:app --reload --port 8000
-\# terminal 2: the frontend
+```
+
+Terminal two:
+
+```bash
 cd frontend
-npm install
 npm run dev
 ```
 
-Open [http\://localhost:5173](http\://localhost:5173). Submitting the form
+Open <http://localhost:5173>. The web client submits a run, follows its replayable SSE stream, and shows the pipeline, live node output, debates, reports, and final decision in one workspace.
 
-navigates to a live page where each pipeline stage lights up as it runs, the
+## Web workspace
 
-active node's text streams into a preview panel, debate turns appear as
+The frontend is intentionally a focused research room rather than a generic admin panel. It includes:
 
-labelled blocks, and the decision card fills in when the Portfolio Manager
+- a run composer with local-date-safe date handling, ticker suggestions, and analyst lens cards;
+- a live pipeline with completed/current/future states;
+- an SSE output tail that reconnects without duplicating the transcript;
+- expandable research reports and debate transcripts;
+- recent run history with graceful empty/offline states;
+- responsive layouts for laptop, tablet, and mobile widths;
+- local CSS and inline SVG icons, so the preview does not depend on a CDN or remote font.
 
-finishes.
+<p align="center">
+  <img src="docs/live-run.svg" alt="tradeagents live run workspace" width="920">
+</p>
 
----
+The API proxy is server-side. Browser code calls relative `/api/...` URLs; Vite forwards them to `http://localhost:8000` during development. This keeps the hosted preview from trying to reach the browser's own `localhost`.
+
+See [`frontend/README.md`](frontend/README.md) for the component map and frontend-specific commands.
 
 ## Supported LLM providers
 
-| Provider | Key | Notes |
+Provider selection is configured with `llm_provider` and the matching environment key.
+
+| Provider | Environment key | Notes |
 |---|---|---|
-| OpenAI | `OPENAI_API_KEY` | Default. Uses the Responses API for native models. |
-| Anthropic | `ANTHROPIC_API_KEY` | Claude 4.6+ and Claude 5 support the `effort` parameter. |
-| Google | `GOOGLE_API_KEY` | Gemini 3.x. `thinking_level` on Flash models. |
-| xAI | `XAI_API_KEY` | Grok. |
-| DeepSeek | `DEEPSEEK_API_KEY` | Thinking models carry reasoning state across turns. |
+| OpenAI | `OPENAI_API_KEY` | Default provider. |
+| Anthropic | `ANTHROPIC_API_KEY` | Claude models. |
+| Google | `GOOGLE_API_KEY` | Gemini models. |
+| xAI | `XAI_API_KEY` | Grok models. |
+| DeepSeek | `DEEPSEEK_API_KEY` | Thinking models supported. |
 | Qwen | `DASHSCOPE_API_KEY` | International endpoint. |
-| Qwen (China) | `DASHSCOPE_CN_API_KEY` | Mainland endpoint. |
-| GLM | `ZHIPU_API_KEY` | Z.AI, international. |
-| GLM (China) | `ZHIPU_CN_API_KEY` | BigModel. |
+| GLM | `ZHIPU_API_KEY` | Z.AI / international. |
 | MiniMax | `MINIMAX_API_KEY` | M2.x reasoning models. |
-| Kimi | `MOONSHOT_API_KEY` | Moonshot. |
+| Kimi | `MOONSHOT_API_KEY` | Moonshot models. |
 | Mistral | `MISTRAL_API_KEY` | |
 | Groq | `GROQ_API_KEY` | |
 | NVIDIA | `NVIDIA_API_KEY` | NIM. |
 | OpenRouter | `OPENROUTER_API_KEY` | |
-| Azure OpenAI | see below | |
-| AWS Bedrock | see below | |
-| Ollama | — | Local. `OLLAMA_BASE_URL` for a remote host. |
-| OpenAI-compatible | — | Any vLLM / LM Studio / llama.cpp / relay. |
-<details>
+| Azure OpenAI | Azure settings | Set the Azure endpoint and deployment. |
+| AWS Bedrock | AWS credential chain | Install the optional Bedrock extra. |
+| Ollama | — | Local; set `OLLAMA_BASE_URL` if remote. |
+| OpenAI-compatible | — | vLLM, LM Studio, llama.cpp, or a relay. |
 
-<summary><b>Azure OpenAI</b></summary>
-
-Copy `.env.enterprise.example` to `.env.enterprise` and fill in:
-
-```bash
-AZURE_OPENAI_API_KEY=...
-AZURE_OPENAI_ENDPOINT=https\://<resource>.openai.azure.com/
-AZURE_OPENAI_DEPLOYMENT_NAME=...
-OPENAI_API_VERSION=2025-03-01-preview
-```
-
-Then set `llm_provider: "azure"`.
-
-</details>
-
-<details>
-
-<summary><b>AWS Bedrock</b></summary>
-
-```bash
-pip install -e ".[bedrock]"
-```
-
-Set `llm_provider: "bedrock"`. Authentication is either
-
-`AWS_BEARER_TOKEN_BEDROCK` (no access keys needed) or the standard AWS
-
-credential chain. Set `AWS_DEFAULT_REGION`. Use a Bedrock model ID such as
-
-`us.anthropic.claude-opus-4-8-v1:0`.
-
-</details>
-
-<details>
-
-<summary><b>Ollama and OpenAI-compatible servers</b></summary>
-
-```bash
-\# Ollama
-llm_provider: "ollama"
-OLLAMA_BASE_URL=http\://localhost:11434/v1   # optional; localhost by default
-\# vLLM, LM Studio, llama.cpp, or any compatible relay
-llm_provider: "openai_compatible"
-backend_url: "http\://localhost:8000/v1"     # vLLM
-backend_url: "http\://localhost:1234/v1"     # LM Studio
-```
-
-No key is required for local servers. Set `OPENAI_COMPATIBLE_API_KEY` if
-
-your relay needs one.
-
-</details>
-
----
+For provider-specific settings, see `.env.example` and the defaults in `tradeagents/default_config.py`.
 
 ## CLI usage
 
-```
+```text
 python -m tradeagents TICKER YYYY-MM-DD [options]
-Options:
-  --analysts=a,b,c    Select analysts (default: market,social,news,fundamentals)
-  --no-display        Suppress the live progress display
-  --save[=PATH]       Write the report tree; default is a timestamped directory
-                      under results_dir
-  --debug             Verbose per-node printing
 ```
 
-### Backtest
+Useful options include:
+
+| Option | Purpose |
+|---|---|
+| `--save[=PATH]` | Write the report tree to a timestamped directory or the supplied path. |
+| `--analysts=market,news` | Select a subset of analyst registries. |
+| `--no-display` | Disable the terminal live progress display. |
+| `--debug` | Use the verbose debug path. |
+
+The exact CLI surface is available with:
 
 ```bash
-python -m tradeagents.backtest NVDA,AAPL \\
-    --start 2026-06-01 \\
-    --end   2026-08-01 \\
-    --every 7
+python -m tradeagents --help
 ```
-
-`--run-id=ID` resumes an interrupted sweep. Cells already written to that
-
-run's log are skipped, so re-launching continues from where it left off.
-
-### What a run produces
-
-```
-\~/.tradeagents/logs/reports/NVDA_20261013_143055/
-├── complete_report.md          ← the whole run, readable top to bottom
-├── run.json                    ← ticker, date, rating, models, config snapshot
-├── 01_analysts/
-│   ├── market.md
-│   ├── sentiment.md
-│   ├── news.md
-│   └── fundamentals.md
-├── 06_research/
-│   ├── upside.md
-│   ├── downside.md
-│   └── lead.md
-├── 08_trading/
-│   └── trader.md
-├── 09_risk/
-│   ├── growth.md
-│   ├── capital.md
-│   └── balanced.md
-└── 12_portfolio/
-    └── decision.md
-```
-
----
 
 ## Python API
 
+The graph can be used directly when a caller needs a custom integration:
+
 ```python
 from tradeagents.graph.trading_graph import TradingGraph
-from tradeagents.default_config import DEFAULT_CONFIG
-from tradeagents.portfolio import PortfolioContext
-config = DEFAULT_CONFIG.copy()
-config["llm_provider"] = "openai"
-config["deep_think_llm"] = "gpt-4o"
-config["quick_think_llm"] = "gpt-4o-mini"
-config["max_debate_rounds"] = 2
+
+config = {
+    "llm_provider": "openai",
+    "quick_think_llm": "gpt-4.1-mini",
+    "deep_think_llm": "gpt-4.1",
+    "results_dir": "results",
+}
+
 graph = TradingGraph(
-    selected_analysts=("market", "news"),
+    selected_analysts=("market", "news", "fundamentals"),
     config=config,
-    debug=False,
 )
-\# Optional: give the trader and PM a book to size against
-book = PortfolioContext.model_validate({
-    "cash": 25_000.0,
-    "currency": "USD",
-    "positions": [{"ticker": "NVDA", "quantity": 120, "average_price": 150.0}],
-})
-final_state, decision = graph.propagate(
-    "NVDA", "2026-09-01", portfolio=book,
-)
-print(decision)
-graph.save_reports(final_state, "NVDA")
+result, _ = graph.propagate("NVDA", "2026-10-01", asset_type="stock")
+print(result["final_rating"])
 ```
 
-### Backtest programmatically
+For a portfolio-aware run, validate a `PortfolioContext` and pass it to the graph. The CLI and API share the same decision log and report conventions.
 
-```python
-from tradeagents.backtest import iter_grid, run_backtest, summarize
-dates = iter_grid("2026-06-01", "2026-08-01", every_n_days=7)
-result = run_backtest(
-    ["NVDA", "AAPL"], dates, config,
-    selected_analysts=["market", "news"],
-)
-print(summarize(result).render())
-```
+## API surface
 
-### Portfolio context
+The FastAPI app exposes the live workspace contract:
 
-A portfolio is optional. When you pass one, the trader sizes against it; when
-
-you don't, the prompts say so explicitly and the trader falls back to a
-
-standard allocation. Three states are distinguished:
-
-- a **position** — sized against directly
-
-- a **flat book** — `positions: []`, meaning "no holdings, told you so"
-
-- **no context** — nothing passed, meaning "you don't know"
-
-Absence and flatness are not the same fact, so the pipeline never conflates
-
-them.
-
----
-
-## Web UI
-
-Two services:
-
-```bash
-\# Backend
-uvicorn tradeagents.api.main:app --port 8000
-\# Frontend
-cd frontend && npm run dev
-```
-
-The frontend runs on `:5173` and proxies `/api` to `:8000`, so SSE streams
-
-work without CORS in development.
-
-### Pages
-
-**Run view** (`/runs/:id`)
-
-- **Pipeline graph** — a vertical list of stages, lit as each runs, greyed
-
-  as each finishes.
-
-- **Live preview** — the active node's streamed text, scrolling.
-
-- **Debate panels** — turns appear as labelled blocks as they are spoken.
-
-- **Report panel** — collapsible sections, filled as each analyst completes.
-
-- **Decision card** — the final rating, styled by direction, at the top.
-
-**API endpoints**
-
-| Endpoint | What |
+| Endpoint | Purpose |
 |---|---|
-| `POST /api/runs` | Start a run |
-| `GET /api/runs` | List runs |
-| `GET /api/runs/{id}` | Run summary + full state |
-| `GET /api/runs/{id}/stream` | SSE event stream (replays history on connect) |
-| `GET /api/runs/{id}/events` | Full event log as JSON |
-| `DELETE /api/runs/{id}` | Cancel a run |
-| `GET /api/decisions` | Decision log entries, filterable by ticker |
-| `GET /api/decisions/markdown` | Human-readable log |
-| `POST /api/decisions/settle` | Force a settlement pass |
-| `POST /api/backtests` | Start a sweep |
-| `GET /api/backtests/{id}` | Backtest status + summary |
-Streaming is Server-Sent Events. A client that connects mid-run gets the
+| `GET /api/health` | Health check. |
+| `POST /api/runs` | Start a background graph run. |
+| `GET /api/runs` | List in-process run summaries. |
+| `GET /api/runs/:id` | Read one run summary and final state. |
+| `GET /api/runs/:id/stream` | Replay history, then stream live normalized events over SSE. |
+| `GET /api/runs/:id/events` | Return the complete event log as JSON. |
+| `GET /api/decisions` | Read decision-log entries, optionally filtered by ticker. |
+| `POST /api/decisions/settle` | Run a settlement pass. |
+| `POST /api/backtests` | Start a backtest grid. |
+| `GET /api/backtests/:id` | Read a backtest result. |
 
-history first, then live events; a client that connects after the run
+Event payloads are flat dictionaries with a `type` and `ts`: `run.started`, `token`, `tool.started`, `tool.finished`, `node.finished`, `report`, `debate.turn`, `decision`, `run.state`, `run.finished`, and `run.failed`. A reconnecting client receives history again; the frontend de-duplicates replayed payloads.
 
-finishes gets the history and an immediate clean close.
+## Data and memory
 
----
+The vendor router is explicit and behavior-oriented. Vendors raise shared error types, and the router chooses fallbacks based on behavior rather than vendor-specific exception branches.
 
-## Data vendors
+Included data integrations cover:
 
-| Category | Vendors | Purpose |
-|---|---|---|
-| `core_stock_apis` | yfinance, alpha_vantage | OHLCV prices |
-| `technical_indicators` | yfinance, alpha_vantage | RSI, MACD, Bollinger, etc. |
-| `fundamental_data` | yfinance, alpha_vantage, sec_edgar | Statements and overviews |
-| `news_data` | yfinance, alpha_vantage | Ticker news and global macro |
-| `macro_data` | fred | Policy rates, CPI, unemployment, yields |
-| `prediction_markets` | polymarket | Market-implied event probabilities |
-**The vendor chain is explicit.** A call is served by the first configured
+- Yahoo Finance prices, OHLCV, indicators, fundamentals, and news;
+- Alpha Vantage as an alternate price/fundamental/news source;
+- SEC EDGAR filings;
+- FRED macro series with point-in-time vintage handling;
+- Polymarket event probabilities;
+- Reddit and StockTwits social context.
 
-vendor that succeeds; the router never silently falls back to a vendor you
+The pipeline applies date windows so an analysis cannot fetch prices beyond its analysis date. The decision log is JSONL and acts as the source of truth for settlement, reflection, backtest scoring, and future context.
 
-did not choose. To enable fallback, list vendors in order:
+### The memory loop
 
-```python
-config["data_vendors"]["core_stock_apis"] = "yfinance,alpha_vantage"
+```text
+run decision → holding window → realized return + alpha
+      ↑                                  ↓
+  future context ← reflection ← settlement
 ```
 
-### SEC EDGAR
-
-US fundamentals can come from SEC EDGAR, which reports each fact with its
-
-**filing date**. A run dated in the past reads statements as they were on
-
-file by then — including restatements at the vintage that was current.
-
-Yahoo and Alpha Vantage do not carry filing dates, so the newest period may
-
-postdate the analysis date; the vendor's header says so.
-
-```python
-config["data_vendors"]["fundamental_data"] = "sec_edgar,yfinance"
-```
-
-```bash
-SEC_EDGAR_USER_AGENT="Your Name your@email.com"
-```
-
-### FRED point-in-time
-
-Macroeconomic series are revised. FRED reports every observation with its
-
-publication date, so a historical run can ask for the vintage that was
-
-current then. Without this, a backtest would read today's revised GDP as if
-
-it had been known at the time.
-
-```bash
-FRED_API_KEY=...
-```
-
----
-
-## Memory and learning
-
-Every completed run is appended to a JSONL decision log at
-
-`\~/.tradeagents/memory/decisions.jsonl` (override with
-
-`TRADEAGENTS_MEMORY_LOG`).
-
-The next run for the same ticker:
-
-1. **Settles** any pending decisions whose holding window has now traded —
-
-   fetches the realized return and alpha against the regional benchmark,
-
-   generates a short reflection, and marks the entry settled.
-
-2. **Injects** recent same-ticker decisions and cross-ticker lessons into
-
-   the Portfolio Manager's prompt.
-
-3. **Records** its own decision for a future run to settle.
-
-Historical runs filter the injected lessons to those whose outcome was
-
-already known by the trade date, so a backtest does not learn from outcomes
-
-that had not happened yet.
-
-### Regional benchmarks
-
-Alpha is measured against a benchmark chosen from the ticker's exchange
-
-suffix:
-
-| Suffix | Benchmark | Market |
-|---|---|---|
-| *\*(none)\** | SPY | US |
-| `.T` | ^N225 | Tokyo |
-| `.HK` | ^HSI | Hong Kong |
-| `.L` | ^FTSE | London |
-| `.TO` | ^GSPTSE | Toronto |
-| `.AX` | ^AXJO | Australia |
-| `.NS` | ^NSEI | India NSE |
-| `.SS` / `.SZ` | Composite | China A-shares |
-Override with `benchmark_ticker`, or change the map entirely via
-
-`benchmark_map`.
-
----
+Missing context stays missing; it is not silently converted into an empty report. That distinction keeps prompts from treating unavailable evidence as evidence of nothing.
 
 ## Backtesting
 
+The backtest runner sweeps tickers and dates, skips existing cells where possible, records decisions in the same log, settles resolved entries, and summarizes outcomes by rating. It evaluates decision quality; it is not a fill-level trading simulator.
+
+CLI example:
+
 ```bash
-python -m tradeagents.backtest NVDA,AAPL \\
-    --start 2026-06-01 --end 2026-08-01 --every 7
+python -m tradeagents.backtest \
+  --tickers NVDA,AAPL \
+  --start 2025-01-01 \
+  --end 2026-01-01 \
+  --every-n-days 14
 ```
 
-Output:
-
-```
-Sweeping 2 ticker(s) × 5 date(s) = 10 cells
-run_id: 20261013_143055
-run_dir: \~/.tradeagents/logs/backtest/20261013_143055
-cells run: 10, skipped: 0, failed: 0
-Resolved cells: 8 · pending: 2 · unscored: 0
-  Buy: n=5, called direction 60%, mean alpha +1.24%
-  Sell: n=2, called direction 50%, mean alpha -0.85%
-  Hold: n=1, no direction claimed, mean alpha +0.02%
-Pending cells are not scored above; re-run to settle them.
-Alpha is realized over 5 trading days after each analysis date.
-```
-
-**What backtest measures, and what it doesn't.** It measures \*decision
-
-quality\*: given a rating at a point in time, did the direction prove right
-
-and did the instrument outperform its benchmark? It is not a portfolio
-
-simulator. Turning a rating into a filled order needs a quantity, a fill
-
-price, and a cash ledger — none of which the system has. Inventing them here
-
-would put an execution model behind an evaluation tool.
-
----
+The API exposes the same grid runner for integrations that need a background job.
 
 ## Observability
 
-### Langfuse
-
-Optional, and disabled by default. Install and configure:
-
-```bash
-pip install -e ".[observability]"
-export LANGFUSE_PUBLIC_KEY=pk-lf-...
-export LANGFUSE_SECRET_KEY=sk-lf-...
-export LANGFUSE_HOST=https\://cloud.langfuse.com     # EU
-\# export LANGFUSE_HOST=https\://us.cloud.langfuse.com  # US
-```
-
-Runs appear in Langfuse as nested traces: every node, every LLM call, every
-
-tool call. Runs are grouped by ticker via `langfuse_session_id`, so you can
-
-see a ticker's history in one view.
-
-Three-state control:
-
-```bash
-TRADEAGENTS_LANGFUSE=auto    # default: trace when both keys are set
-TRADEAGENTS_LANGFUSE=on      # require credentials; raise if absent
-TRADEAGENTS_LANGFUSE=off     # never trace
-```
-
-### Live progress display
-
-The terminal shows a Rich live region during every run: one row per node,
-
-elapsed time, tool-call count, and a rolling preview of the active node's
-
-output. Suppress it with `--no-display`, or force streaming headless with
-
-`TRADEAGENTS_STREAMING=true`.
-
----
+Optional Langfuse integration can trace graph nodes, LLM calls, and tool calls. The terminal progress display consumes the same normalized stream used by the API, so a slow tool or a streaming model response is visible rather than looking like a frozen process.
 
 ## Configuration
 
-Every key is settable from `DEFAULT_CONFIG`, from `config` in Python, or
+Start from `.env.example`. Common keys include:
 
-from an environment variable.
-
-### Environment overrides
-
-| Variable | Config key | Notes |
-|---|---|---|
-| `TRADEAGENTS_LLM_PROVIDER` | `llm_provider` | `openai`, `anthropic`, `google`, … |
-| `TRADEAGENTS_DEEP_THINK_LLM` | `deep_think_llm` | Used by the Investment Lead and PM |
-| `TRADEAGENTS_QUICK_THINK_LLM` | `quick_think_llm` | Used by analysts, debaters, trader |
-| `TRADEAGENTS_BACKEND_URL` | `backend_url` | Custom endpoint |
-| `TRADEAGENTS_OUTPUT_LANGUAGE` | `output_language` | Report language; internal debate stays English |
-| `TRADEAGENTS_MAX_DEBATE_ROUNDS` | `max_debate_rounds` | Research debate rounds |
-| `TRADEAGENTS_MAX_RISK_ROUNDS` | `max_risk_discuss_rounds` | Risk debate rounds |
-| `TRADEAGENTS_TEMPERATURE` | `temperature` | Forwarded to the provider |
-| `TRADEAGENTS_STREAMING` | `streaming` | Token streaming |
-| `TRADEAGENTS_LANGFUSE_ENABLED` | `langfuse_enabled` | `auto` / `on` / `off` |
-| `TRADEAGENTS_MEMORY_LOG` | `memory_log_path` | Decision log location |
-| `TRADEAGENTS_HOLDING_DAYS` | `holding_period_days` | Settlement window |
-| `TRADEAGENTS_RESULTS_DIR` | `results_dir` | Base directory for outputs |
-| `TRADEAGENTS_CACHE_DIR` | `data_cache_dir` | Vendor cache |
-### Config keys worth knowing
-
-```python
-"max_debate_rounds": 1            # more rounds = longer runs, denser debates
-"max_risk_discuss_rounds": 1
-"output_language": "English"      # "Deutsch", "日本語", etc.
-"holding_period_days": 5          # settlement window in trading days
-"benchmark_ticker": None          # override the regional default
-"data_vendors": { ... }           # per-category vendor chain
-"tool_vendors": { ... }           # per-tool override of the category
+```bash
+OPENAI_API_KEY=...
+LLM_PROVIDER=openai
+QUICK_THINK_LLM=gpt-4.1-mini
+DEEP_THINK_LLM=gpt-4.1
+RESULTS_DIR=results
+MEMORY_LOG_PATH=results/decisions.jsonl
+DATA_CACHE_DIR=results/cache
 ```
 
----
+Configuration is resolved from defaults, environment variables, and explicit dictionaries. See `tradeagents/dataflows/config.py` and `tradeagents/default_config.py` for the complete set.
 
-## Extending
+## Extending the system
 
 ### Add an analyst
 
-Two files and one registry entry:
-
-```
-agents/analysts/my_analyst.py
-agents/analysts/prompts/my_analyst.txt
-```
-
-Then in `graph/setup.py`:
-
-```python
-ANALYST_REGISTRY["my"] = {
-    "node": "My Analyst",
-    "tools_node": "tools_my",       # or None for a tool-less analyst
-    "clear_node": "Clear My",
-    "factory": create_my_analyst,
-    "tools": MY_TOOLS,
-}
-```
-
-The graph builder walks the registry; it does not change.
+Add the node and prompt, then register it in the analyst registry. The graph builder walks the registry, so the orchestration path does not need a new hard-coded branch.
 
 ### Add a data vendor
 
-One module in `dataflows/vendors/`, one import and one row in the router:
-
-```python
-VENDOR_METHODS["get_stock_data"]["myvendor"] = my_get_stock_data
-```
-
-Vendors raise from the shared taxonomy (`NoMarketDataError`,
-
-`VendorRateLimitError`, `VendorNotConfiguredError`) and the router reacts by
-
-behavior, not by vendor name — no new `except` clause is needed.
+Add a vendor module under `tradeagents/dataflows/vendors/`, raise the shared error taxonomy, and add a router row. Fallback behavior stays centralized.
 
 ### Add an LLM provider
 
-OpenAI-compatible providers are a registry row:
+OpenAI-compatible providers can be a registry row. Genuinely different APIs can implement the provider client interface and be added to the factory.
 
-```python
-OPENAI_COMPATIBLE_PROVIDERS["myprovider"] = ProviderSpec(
-    base_url="https\://api.myprovider.com/v1",
-)
-```
+## Reproducibility and point-in-time behavior
 
-For a genuinely different API, subclass `BaseLLMClient` and add a branch to
+The same ticker and date will not produce identical text: model sampling and live social/news feeds vary. The deterministic boundaries are more important:
 
-`create_llm_client`.
+- price and indicator windows stop at the analysis date;
+- fundamentals are used as filed where the vendor supports filing dates;
+- macro data is pinned to the vintage known by the analysis date;
+- instrument identity is resolved before agent work begins;
+- the final rating is read from typed output rather than guessed from prose.
 
----
-
-## Reproducibility
-
-Two runs of the same ticker and date will not produce identical text.
-
-**Sources of variation:**
-
-- Model sampling is non-deterministic. Even at fixed temperature, providers
-
-  do not guarantee byte-identical output across calls.
-
-- Live feeds move. News, StockTwits, and Reddit return different content
-
-  over time; pinning the analysis date holds prices fixed but social and
-
-  news feeds still reflect the present.
-
-**Deterministic mechanisms:**
-
-- Instrument identity (company name, sector, industry) is resolved
-
-  deterministically from the ticker before any agent runs.
-
-- Price and indicator windows are clamped to the analysis date; a model
-
-  cannot walk past it, however it phrases a tool call.
-
-- FRED macro data is pinned to the vintage known by the analysis date, not
-
-  today's revision.
-
-- SEC EDGAR fundamentals are served as filed, not as amended.
-
-- The decision log reads a structured rating from the PM's typed output
-
-  rather than parsing prose back into a label.
-
-To reduce variation, lower `temperature`. Reasoning models largely ignore
-
-it; for tighter reproducibility, name a non-reasoning model.
-
----
+Use a lower temperature and a non-reasoning model when a tighter experiment is useful, but do not assume provider outputs are byte-identical.
 
 ## Project layout
 
-```
+```text
 tradeagents/
-├── agents/
-│   ├── analysts/               ← market, sentiment, news, fundamentals
-│   ├── researchers/            ← upside case, downside case, investment lead
-│   ├── risk/                   ← growth, capital, balanced, portfolio manager
-│   ├── trader/                 ← trader
-│   ├── debate.py               ← shared debate machinery
-│   ├── schemas.py              ← structured output types
-│   ├── structured.py           ← structured-output helpers with fallback
-│   ├── state.py                ← the graph state
-│   ├── tools.py                ← LLM tool wrappers around the router
-│   └── context.py              ← prompt context helpers
-├── api/                        ← FastAPI + SSE
-├── backtest/                   ← grid runner and scoring
-├── dataflows/
-│   ├── vendors/
-│   │   ├── yahoo/              ← prices, indicators, fundamentals, news
-│   │   ├── alpha_vantage/      ← same, as an alternative
-│   │   ├── sec_edgar.py        ← statements as filed
-│   │   ├── fred.py             ← macro series at vintage
-│   │   ├── polymarket.py       ← event probabilities
-│   │   ├── reddit.py           ← social posts
-│   │   └── stocktwits.py       ← cashtag stream
-│   ├── router.py               ← explicit vendor chain dispatch
-│   ├── symbols.py              ← ticker normalization
-│   ├── errors.py               ← vendor error taxonomy
-│   ├── date_window.py          ← look-ahead-safe bounds
-│   └── config.py               ← process-wide config
-├── graph/
-│   ├── setup.py                ← registries and graph construction
-│   ├── trading_graph.py        ← top-level orchestration
-│   └── progress.py             ← terminal display + event adapters
-├── llm_clients/                ← provider factory
-├── memory/
-│   ├── log.py                  ← JSONL decision log
-│   ├── settlement.py           ← outcome resolution
-│   ├── reflection.py           ← lesson generation
-│   └── context.py              ← past-context formatting
-├── observability.py            ← optional Langfuse wiring
-├── portfolio.py                ← the caller's book
-├── reporting.py                ← report tree writer
-├── default_config.py           ← defaults and env overrides
-└── __main__.py                 ← CLI entry point
-frontend/                       ← Vite + React + Tailwind
-├── src/
-│   ├── components/             ← RunForm, PipelineGraph, DecisionCard, …
-│   ├── hooks/useRunStream.ts   ← SSE subscription
-│   ├── pages/RunPage.tsx       ← the live run view
-│   ├── api.ts
-│   └── types.ts
-└── …
+├── agents/                  # analysts, researchers, risk, trader, schemas
+├── api/                     # FastAPI routes, SSE events, run manager
+├── backtest/                # grid runner and scoring
+├── dataflows/               # vendors, router, symbols, date windows
+├── graph/                   # registries, orchestration, progress adapters
+├── llm_clients/             # provider factory
+├── memory/                  # log, settlement, reflection, context
+├── portfolio.py             # caller portfolio context
+├── reporting.py             # report tree writer
+└── default_config.py        # defaults and environment overrides
+frontend/
+├── src/components/          # run form, pipeline, reports, decision UI
+├── src/hooks/               # SSE subscription
+└── src/pages/RunPage.tsx    # live research room
+docs/
+├── architecture.svg         # local README architecture illustration
+├── live-run.svg             # local README live-run illustration
+└── ui-overview.svg          # local README workspace illustration
+results/                     # example/API artifacts and saved reports
+tests/                       # unit and integration-oriented tests
 ```
-
----
-
-## Design principles
-
-A few decisions that shaped the codebase, worth knowing before you change
-
-something.
-
-**Absence is not emptiness.** A missing report is not a report that found
-
-nothing. A missing portfolio is not a flat book. Every place a value can be
-
-absent, the code says so explicitly rather than passing an empty string
-
-through, because a model reads an empty section as a finding.
-
-**The transcript is the only state.** A debate stores a list of turns.
-
-Round number is derived from position; the next speaker is derived from the
-
-last entry. There is no counter to fall out of sync with the transcript,
-
-because a counter and a list can only disagree.
-
-**Behavior, not names.** The router catches error *\*types\**, not vendor
-
-names. Adding a vendor never requires touching the router. Adding a debate
-
-never requires touching the graph builder. Adding an analyst is a registry
-
-row.
-
-**Point-in-time means point-in-time.** Prices are cut at the analysis date.
-
-Fundamentals are cut at their filing date where the vendor supports it.
-
-Macro series are pinned to the vintage that was current. The pipeline
-
-refuses to serve a number the run could not have known.
-
-**Structured where it helps, prose where it doesn't.** The five decision
-
-agents (Investment Lead, Trader, Portfolio Manager) emit typed output so
-
-downstream consumers read fields rather than regex. The four analysts emit
-
-prose, because the reader is a human and the content is the analysis.
-
-**The log is the source of truth.** Everything downstream of a decision —
-
-settlement, reflection, backtest scoring, the PM's past context — reads from
-
-the same JSONL the pipeline writes. There is no parallel record that can
-
-drift from what actually happened.
-
----
 
 ## Development
 
 ```bash
-\# install dev extras
-uv pip install -e ".[dev]"
-\# run the fast test suite
+# install project and development/API extras
+uv pip install -e ".[dev,api]"
+
+# fast unit suite
 pytest -m unit
-\# lint
+
+# Python lint and formatting
 ruff check .
 ruff format .
-\# API tests need the extra dependency
-uv pip install -e ".[dev,api]"
+
+# frontend
+cd frontend
+npm install
+npm run build
+npm run lint
+```
+
+Run the API tests separately when needed:
+
+```bash
 pytest tests/test_api.py
 ```
 
-### Running the frontend in development
+The included Vite config binds development and preview servers to `0.0.0.0`, allows the hosted preview origin, and proxies `/api` without exposing a browser-side localhost dependency.
 
-```bash
-cd frontend
-npm install
-npm run dev     # http\://localhost:5173, proxies /api to :8000
-```
+## Markets and symbols
 
-### Docker
-
-```bash
-docker compose run --rm tradingagents
-```
-
-For a local model served by Ollama in the same compose project:
-
-```bash
-docker compose --profile ollama run --rm tradingagents-ollama
-```
-
----
-
-## Markets and tickers
-
-Any instrument Yahoo Finance covers, using the exchange-suffixed ticker:
+Any instrument covered by the configured vendors can be used, including exchange-suffixed equities and crypto pairs:
 
 | Market | Example |
 |---|---|
@@ -918,42 +384,25 @@ Any instrument Yahoo Finance covers, using the exchange-suffixed ticker:
 | Hong Kong | `0700.HK` |
 | Tokyo | `7203.T` |
 | London | `AZN.L` |
-| India | `RELIANCE.NS`, `RELIANCE.BO` |
+| India | `RELIANCE.NS` |
 | Canada | `SHOP.TO` |
 | Australia | `BHP.AX` |
 | China A-shares | `600519.SS`, `000001.SZ` |
 | Crypto | `BTC-USD`, `ETH-USD` |
-Broker-style symbols are normalized to Yahoo's convention automatically:
 
-`XAUUSD` → `GC=F`, `BTCUSD` → `BTC-USD`, `EURUSD` → `EURUSD=X`,
+Common broker-style symbols are normalized to vendor conventions, for example `XAUUSD` → `GC=F`, `BTCUSD` → `BTC-USD`, and `SPX500` → `^GSPC`.
 
-`SPX500` → `^GSPC`, `09992.HK` → `9992.HK`, `600519.SH` → `600519.SS`.
+## What this is not
 
----
+`tradeagents` is not:
 
-## A note on what this is not
+- an execution system;
+- an order manager or live position ledger;
+- a fill-accurate portfolio simulator;
+- investment advice;
+- a guarantee of future results.
 
-`tradeagents` is a research framework. It runs large language models over
-
-financial data, produces reasoning you can read, and tracks whether that
-
-reasoning held up. It is not:
-
-- a trading system (there is no execution, no order management, no ledger)
-
-- a portfolio simulator (backtest measures decision quality, not returns)
-
-- investment advice
-
-- a guarantee of anything
-
-The interesting artifact is not the rating. It is the transcript — four
-
-analysts, two debates, and a decision, each grounded in tool output with
-
-citations. Read the debate before you read the decision.
-
----
+The most useful artifact is the transcript: read the evidence and debates before you read the rating.
 
 ## License
 
@@ -961,16 +410,4 @@ Apache 2.0. See `LICENSE`.
 
 ## Acknowledgments
 
-Built on the shoulders of [LangGraph](https\://github.com/langchain-ai/langgraph)
-
-for orchestration, [yfinance](https\://github.com/ranaroussi/yfinance) for
-
-price data, [stockstats](https\://github.com/jealous/stockstats) for technical
-
-indicators, and [Rich](https\://github.com/Textualize/rich) for the terminal
-
-display. Data provided by Yahoo Finance, Alpha Vantage, the Federal Reserve
-
-Bank of St. Louis (FRED), the U.S. Securities and Exchange Commission (EDGAR),
-
-Polymarket, StockTwits, and Reddit.
+Built with [LangGraph](https://github.com/langchain-ai/langgraph), [LangChain Core](https://github.com/langchain-ai/langchain), [yfinance](https://github.com/ranaroussi/yfinance), [stockstats](https://github.com/jealous/stockstats), [FastAPI](https://fastapi.tiangolo.com/), [React](https://react.dev/), and [Vite](https://vite.dev/).

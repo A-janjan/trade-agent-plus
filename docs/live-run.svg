@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="920" viewBox="0 0 1600 920" role="img" aria-labelledby="title desc">
+  <title id="title">tradeagents live research run screen</title>
+  <desc id="desc">A dashboard illustration of a live tradeagents run showing the decision path, streaming output, debate transcript, and final decision card.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#080b0f"/><stop offset="1" stop-color="#121a20"/></linearGradient>
+    <linearGradient id="lime" x1="0" x2="1"><stop stop-color="#67d8c1"/><stop offset="1" stop-color="#c8fa77"/></linearGradient>
+    <pattern id="grid" width="54" height="54" patternUnits="userSpaceOnUse"><path d="M54 0H0V54" fill="none" stroke="#b1d9d3" stroke-opacity=".045"/></pattern>
+    <filter id="glow"><feGaussianBlur stdDeviation="10" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1600" height="920" rx="28" fill="url(#bg)"/><rect width="1600" height="920" rx="28" fill="url(#grid)"/>
+  <g font-family="Arial, sans-serif">
+    <rect x="58" y="35" width="1484" height="65" fill="#0a1115"/><path d="M58 100h1484" stroke="#27383c"/>
+    <rect x="82" y="54" width="28" height="28" rx="8" fill="#c8fa77"/><path d="m96 58 2 7 7 2-7 2-2 7-2-7-7-2 7-2 2-7Z" fill="#0b1109"/>
+    <text x="122" y="73" fill="#f0f7f2" font-size="16" font-weight="700">trade<tspan fill="#c8fa77">agents</tspan></text>
+    <text x="348" y="72" fill="#66787d" font-family="monospace" font-size="11">WORKSPACE</text><path d="m440 68 6 6-6 6" fill="none" stroke="#68d7c1"/><text x="460" y="72" fill="#f0f7f2" font-family="monospace" font-size="11">NVDA</text>
+    <rect x="1370" y="56" width="119" height="24" rx="12" fill="#182a23" stroke="#49694f"/><circle cx="1385" cy="68" r="4" fill="#c8fa77"/><text x="1397" y="72" fill="#c8fa77" font-family="monospace" font-size="9">LIVE STREAM</text>
+
+    <text x="79" y="151" fill="#68d7c1" font-family="monospace" font-size="11" letter-spacing="1.6">LIVE RESEARCH RUN  ·  #e37a4f0b38d1</text>
+    <text x="79" y="198" fill="#f0f7f2" font-size="40" font-weight="500">NVDA <tspan fill="#8e9da2" font-weight="400">research run</tspan></text>
+    <text x="79" y="225" fill="#8e9da2" font-size="12">October 14, 2026  ·  4 research lenses  ·  risk debate</text>
+    <text x="1351" y="179" fill="#5d6b70" font-family="monospace" font-size="9">PIPELINE</text><text x="1351" y="207" fill="#c8fa77" font-family="monospace" font-size="21">73%</text><text x="1351" y="225" fill="#5d6b70" font-size="9">9 / 12 nodes</text>
+    <text x="1457" y="179" fill="#5d6b70" font-family="monospace" font-size="9">EVENTS</text><text x="1457" y="207" fill="#c8fa77" font-family="monospace" font-size="21">248</text><text x="1457" y="225" fill="#5d6b70" font-size="9">captured live</text>
+    <path d="M79 251h1405" stroke="#27383c"/>
+
+    <rect x="79" y="282" width="270" height="539" rx="14" fill="#0f171b" stroke="#273a3e"/>
+    <text x="100" y="315" fill="#68d7c1" font-family="monospace" font-size="10" letter-spacing="1.2">⌁ PIPELINE</text><text x="100" y="345" fill="#f0f7f2" font-size="18" font-weight="600">Decision path</text><text x="314" y="344" fill="#c8fa77" font-family="monospace" font-size="12">9/12</text>
+    <rect x="100" y="366" width="228" height="3" rx="2" fill="#2b3e42"/><rect x="100" y="366" width="171" height="3" rx="2" fill="url(#lime)"/>
+    <g font-family="Arial, sans-serif">
+      <text x="100" y="394" fill="#5d6b70" font-family="monospace" font-size="8">ANALYST TEAM</text>
+      <circle cx="112" cy="422" r="10" fill="#142729" stroke="#45645d"/><path d="m108 422 3 3 6-6" fill="none" stroke="#68d7c1" stroke-width="1.7"/><text x="132" y="426" fill="#68797d" font-size="11">Market</text>
+      <circle cx="112" cy="460" r="10" fill="#142729" stroke="#45645d"/><path d="m108 460 3 3 6-6" fill="none" stroke="#68d7c1" stroke-width="1.7"/><text x="132" y="464" fill="#68797d" font-size="11">Sentiment</text>
+      <circle cx="112" cy="498" r="10" fill="#142729" stroke="#45645d"/><path d="m108 498 3 3 6-6" fill="none" stroke="#68d7c1" stroke-width="1.7"/><text x="132" y="502" fill="#68797d" font-size="11">News</text>
+      <circle cx="112" cy="536" r="10" fill="#142729" stroke="#45645d"/><path d="m108 536 3 3 6-6" fill="none" stroke="#68d7c1" stroke-width="1.7"/><text x="132" y="540" fill="#68797d" font-size="11">Fundamentals</text>
+      <text x="100" y="577" fill="#5d6b70" font-family="monospace" font-size="8">RESEARCH DEBATE</text>
+      <circle cx="112" cy="605" r="10" fill="#142729" stroke="#45645d"/><path d="m108 605 3 3 6-6" fill="none" stroke="#68d7c1" stroke-width="1.7"/><text x="132" y="609" fill="#68797d" font-size="11">Upside</text>
+      <circle cx="112" cy="643" r="10" fill="#142729" stroke="#45645d"/><path d="m108 643 3 3 6-6" fill="none" stroke="#68d7c1" stroke-width="1.7"/><text x="132" y="647" fill="#68797d" font-size="11">Downside</text>
+      <text x="100" y="683" fill="#5d6b70" font-family="monospace" font-size="8">RISK DEBATE</text>
+      <rect x="100" y="699" width="228" height="35" rx="8" fill="#203024" stroke="#66845a"/><circle cx="112" cy="716" r="10" fill="#c8fa77"/><path d="m108 716 3 3 6-6" fill="none" stroke="#15210e" stroke-width="1.7"/><text x="132" y="715" fill="#f0f7f2" font-size="11">Balanced Reviewer</text><text x="132" y="727" fill="#c8fa77" font-family="monospace" font-size="8">STREAMING NOW</text>
+      <text x="100" y="770" fill="#c8fa77" font-family="monospace" font-size="9">● LIVE ANALYSIS</text><text x="251" y="770" fill="#5d6b70" font-size="9">SSE connected</text>
+    </g>
+
+    <rect x="378" y="282" width="1106" height="192" rx="14" fill="#14201d" stroke="#607d4b"/>
+    <text x="402" y="316" fill="#68d7c1" font-family="monospace" font-size="10" letter-spacing="1.2">✦ PORTFOLIO MANAGER</text><text x="1388" y="316" fill="#c8fa77" font-family="monospace" font-size="9">● WORKING</text>
+    <text x="402" y="372" fill="#5d6b70" font-family="monospace" font-size="9" letter-spacing="1.4">CURRENT STANCE</text><text x="402" y="421" fill="#c8fa77" font-size="46" font-weight="500">Decision in progress</text>
+    <circle cx="1414" cy="377" r="37" fill="#c8fa77" fill-opacity=".1" stroke="#c8fa77" stroke-opacity=".5"/><path d="M1399 377h30M1414 362v30" stroke="#c8fa77" stroke-width="2" opacity=".8"/>
+    <path d="M402 446h1056" stroke="#385344"/><text x="402" y="461" fill="#5d6b70" font-family="monospace" font-size="9">⌁ measuring…</text><text x="569" y="461" fill="#5d6b70" font-family="monospace" font-size="9">⌁ 248 stream events</text><text x="1291" y="461" fill="#68d7c1" font-family="monospace" font-size="9">EVIDENCE BEFORE CONVICTION</text>
+
+    <rect x="378" y="496" width="1106" height="146" rx="14" fill="#0a1115" stroke="#273a3e"/>
+    <path d="M378 541h1106" stroke="#273a3e"/><text x="402" y="524" fill="#8e9da2" font-family="monospace" font-size="10">●  LIVE NODE OUTPUT</text><text x="1362" y="524" fill="#68d7c1" font-family="monospace" font-size="9">⌁ Balanced Reviewer</text>
+    <text x="402" y="567" fill="#849c98" font-family="monospace" font-size="10">The proposed sizing is supportable if the evidence remains asymmetric,</text><text x="402" y="588" fill="#849c98" font-family="monospace" font-size="10">but the committee should distinguish conviction from momentum… <tspan fill="#c8fa77">▋</tspan></text><text x="402" y="623" fill="#5d6b70" font-family="monospace" font-size="9">TAIL PREVIEW · UPDATES AS THE MODEL RESPONDS</text><text x="1358" y="623" fill="#5d6b70" font-family="monospace" font-size="9">1,642 characters</text>
+
+    <text x="378" y="700" fill="#68d7c1" font-family="monospace" font-size="10" letter-spacing="1.4">ADVERSARIAL REVIEW</text><text x="378" y="734" fill="#f0f7f2" font-size="22" font-weight="600">The room challenges itself</text>
+    <rect x="378" y="762" width="534" height="118" rx="12" fill="#11191d" stroke="#273a3e"/><rect x="942" y="762" width="542" height="118" rx="12" fill="#11191d" stroke="#273a3e"/>
+    <circle cx="406" cy="790" r="15" fill="#213226"/><text x="399" y="796" fill="#c8fa77" font-size="14">✦</text><text x="433" y="790" fill="#f0f7f2" font-size="12" font-weight="600">Research debate</text><text x="433" y="808" fill="#5d6b70" font-size="9">Transcript · 4 contributions</text><text x="400" y="838" fill="#68d7c1" font-size="10">01  Upside Case</text><text x="400" y="858" fill="#849c98" font-size="10">The upside case still has room to compound…</text>
+    <circle cx="970" cy="790" r="15" fill="#213226"/><text x="963" y="796" fill="#c8fa77" font-size="14">◇</text><text x="997" y="790" fill="#f0f7f2" font-size="12" font-weight="600">Risk debate</text><text x="997" y="808" fill="#5d6b70" font-size="9">Transcript · 6 contributions</text><text x="964" y="838" fill="#68d7c1" font-size="10">01  Growth Advocate</text><text x="964" y="858" fill="#849c98" font-size="10">The opportunity justifies measured exposure…</text>
+  </g>
+  <path d="M378 268h1106" stroke="#c8fa77" stroke-opacity=".65"/>
+</svg>

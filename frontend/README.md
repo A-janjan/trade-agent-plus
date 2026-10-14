@@ -1,32 +1,75 @@
-# React + TypeScript + Vite
+# tradeagents web workspace
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The `frontend/` folder is the live research workspace for [tradeagents](../README.md). It is a Vite + React + TypeScript client that starts a run, follows the API's Server-Sent Events stream, and turns the pipeline into a readable research room.
 
-Currently, two official plugins are available:
+## What is on screen
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **New research run** — choose a ticker, point-in-time date, and research lenses.
+- **Live pipeline** — analysts, debates, trader, risk reviewers, and the portfolio manager light up as they finish.
+- **Streaming output** — the active node's response is pinned to a rolling preview.
+- **Decision card** — the final rating, thesis, elapsed time, and event count stay visible.
+- **Evidence archive** — reports and debate transcripts remain expandable after the run completes.
+- **Workspace history** — recent runs are fetched from `GET /api/runs` and link back to their SSE replay.
 
-## React Compiler
+![Workspace overview](../docs/ui-overview.svg)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+![Live run view](../docs/live-run.svg)
 
-## Expanding the Oxlint configuration
+## Local development
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+From the repository root:
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+# terminal 1 — API
+uvicorn tradeagents.api.main:app --reload --port 8000
+
+# terminal 2 — frontend
+cd frontend
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Open <http://localhost:5173>. Vite proxies `/api` to `http://localhost:8000`, so browser code only uses relative API URLs.
+
+## Useful commands
+
+```bash
+npm run dev       # Vite dev server with HMR
+npm run build     # TypeScript project build + production bundle
+npm run lint      # Oxlint
+npm run preview   # Preview the production bundle
+```
+
+The dev and preview servers bind to `0.0.0.0` and allow the hosted preview origin. The API proxy remains server-side; the browser never needs to call `localhost` directly.
+
+## Frontend shape
+
+```text
+src/
+├── components/
+│   ├── DecisionCard.tsx       # final stance and run status
+│   ├── Icon.tsx               # dependency-free inline SVG icons
+│   ├── PipelineGraph.tsx      # stage progress and active node
+│   ├── RecentRuns.tsx         # history list
+│   ├── ReportPanel.tsx        # expandable report archive
+│   ├── RunForm.tsx            # new run controls
+│   └── TokenPreview.tsx       # rolling streamed output
+├── hooks/useRunStream.ts      # SSE subscription + reconnect de-duplication
+├── pages/RunPage.tsx          # live run workspace
+├── api.ts                     # typed REST calls
+└── types.ts                   # API event contracts
+```
+
+## API contract
+
+The frontend expects the FastAPI application to expose:
+
+- `POST /api/runs` to create a run;
+- `GET /api/runs` for recent run summaries;
+- `GET /api/runs/:run_id/stream` for replayable SSE events.
+
+The stream replays history when a browser reconnects. `useRunStream` de-duplicates replayed payloads so a temporary network hiccup does not duplicate the transcript.
+
+## Styling notes
+
+The interface intentionally uses local CSS, inline SVG icons, and no remote font or image dependencies. That keeps the in-app preview usable in a sandboxed iframe and makes the built UI render consistently offline.

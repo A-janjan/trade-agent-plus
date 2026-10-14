@@ -1,67 +1,83 @@
 import { useMemo } from "react";
+import Icon, { type IconName } from "./Icon";
 
-/**
- * The pipeline as a vertical list of stages, with the current stage lit.
- *
- * The graph is defined as the analyst chain (dynamic, based on selection)
- * followed by the fixed post-analyst nodes. "Current" comes from the most
- * recent token event; "finished" from node.finished events.
- */
 const POST_ANALYSTS = [
-    "Upside Case",
-    "Downside Case",
-    "Investment Lead",
-    "Trader",
-    "Growth Advocate",
-    "Capital Steward",
-    "Balanced Reviewer",
-    "Portfolio Manager",
+    { name: "Upside Case", short: "Upside", group: "Research debate", icon: "arrowUpRight" as IconName },
+    { name: "Downside Case", short: "Downside", group: "Research debate", icon: "arrowDown" as IconName },
+    { name: "Investment Lead", short: "Investment lead", group: "Research debate", icon: "spark" as IconName },
+    { name: "Trader", short: "Trader", group: "Action plan", icon: "zap" as IconName },
+    { name: "Growth Advocate", short: "Growth", group: "Risk debate", icon: "trend" as IconName },
+    { name: "Capital Steward", short: "Capital", group: "Risk debate", icon: "shield" as IconName },
+    { name: "Balanced Reviewer", short: "Balanced", group: "Risk debate", icon: "eye" as IconName },
+    { name: "Portfolio Manager", short: "Portfolio manager", group: "Risk debate", icon: "layers" as IconName },
 ];
 
-const ANALYST_LABEL: Record<string, string> = {
-    market: "Market Analyst",
-    social: "Sentiment Analyst",
-    news: "News Analyst",
-    fundamentals: "Fundamentals Analyst",
+const ANALYST_LABEL: Record<string, { name: string; short: string; icon: IconName }> = {
+    market: { name: "Market Analyst", short: "Market", icon: "trend" },
+    social: { name: "Sentiment Analyst", short: "Sentiment", icon: "pulse" },
+    news: { name: "News Analyst", short: "News", icon: "globe" },
+    fundamentals: { name: "Fundamentals Analyst", short: "Fundamentals", icon: "layers" },
 };
 
 interface Props {
     selectedAnalysts: string[];
     finished: Set<string>;
     current: string | null;
+    status: "running" | "done" | "failed";
 }
 
-export default function PipelineGraph({ selectedAnalysts, finished, current }: Props) {
-    const stages = useMemo(() => {
-        const analysts = selectedAnalysts.map((a) => ANALYST_LABEL[a] ?? a);
-        return [...analysts, ...POST_ANALYSTS];
-    }, [selectedAnalysts]);
+export default function PipelineGraph({ selectedAnalysts, finished, current, status }: Props) {
+    const stages = useMemo(
+        () => [
+            ...selectedAnalysts.map((key) => {
+                const analyst = ANALYST_LABEL[key] ?? { name: key, short: key, icon: "activity" as IconName };
+                return { ...analyst, name: analyst.name, group: "Analyst team" };
+            }),
+            ...POST_ANALYSTS,
+        ],
+        [selectedAnalysts],
+    );
+    const complete = stages.filter((stage) => finished.has(stage.name)).length;
 
     return (
-        <ol className="space-y-1">
-            {stages.map((name, i) => {
-                const isFinished = finished.has(name);
-                const isCurrent = current === name && !isFinished;
-                return (
-                    <li
-                        key={name}
-                        className={[
-                            "flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors",
-                            isCurrent ? "bg-panel border border-accent" : "border border-transparent",
-                            isFinished ? "text-slate-500" : "text-slate-200",
-                        ].join(" ")}
-                    >
-                        <span className="w-6 text-xs text-slate-500 text-right">{i + 1}</span>
-                        <span
-                            className={[
-                                "h-2 w-2 rounded-full",
-                                isFinished ? "bg-slate-600" : isCurrent ? "bg-accent animate-pulse" : "bg-line",
-                            ].join(" ")}
-                        />
-                        <span>{name}</span>
-                    </li>
-                );
-            })}
-        </ol>
+        <section className="pipeline-card panel" aria-label="Analysis pipeline">
+            <div className="pipeline-heading">
+                <div>
+                    <div className="eyebrow"><Icon name="activity" size={14} /> Pipeline</div>
+                    <h2>Decision path</h2>
+                </div>
+                <span className="pipeline-count">{complete}/{stages.length}</span>
+            </div>
+            <div className="pipeline-progress"><span style={{ width: `${stages.length ? (complete / stages.length) * 100 : 0}%` }} /></div>
+
+            <ol className="pipeline-list">
+                {stages.map((stage, index) => {
+                    const isFinished = finished.has(stage.name);
+                    const isCurrent = current === stage.name && !isFinished;
+                    const previousGroup = stages[index - 1]?.group;
+                    const showGroup = index === 0 || previousGroup !== stage.group;
+                    return (
+                        <li className="pipeline-item-wrap" key={stage.name}>
+                            {showGroup && <div className="pipeline-group-label">{stage.group}</div>}
+                            <div className={`pipeline-item ${isFinished ? "is-finished" : ""} ${isCurrent ? "is-current" : ""}`}>
+                                <span className="pipeline-index">
+                                    {isFinished ? <Icon name="check" size={13} /> : String(index + 1).padStart(2, "0")}
+                                </span>
+                                <span className="pipeline-stage-icon"><Icon name={stage.icon} size={15} /></span>
+                                <span className="pipeline-stage-copy">
+                                    <strong>{stage.short}</strong>
+                                    {isCurrent && <small>Streaming now</small>}
+                                </span>
+                                {isCurrent && <span className="current-wave"><i /><i /><i /></span>}
+                            </div>
+                        </li>
+                    );
+                })}
+            </ol>
+            <div className="pipeline-footer">
+                <span className={`pipeline-state pipeline-state-${status}`}><span />{status === "running" ? "Live analysis" : status === "done" ? "Run complete" : "Run failed"}</span>
+                <span className="pipeline-live-label">SSE connected</span>
+            </div>
+        </section>
     );
 }

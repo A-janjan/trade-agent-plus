@@ -21,9 +21,17 @@ export interface RunStartRequest {
     portfolio?: object | null;
 }
 
-// Matches tradeagents.api.events — every event has a `type` and a `ts`.
+// Matches tradeagents.api.events. Every event has a type and timestamp.
 export type StreamEvent =
-    | { type: "run.started"; ts: number; run_id: string; ticker: string; trade_date: string; models: Record<string, string> }
+    | {
+          type: "run.started";
+          ts: number;
+          run_id: string;
+          ticker: string;
+          trade_date: string;
+          models: Record<string, string | null | undefined>;
+          selected_analysts?: string[];
+      }
     | { type: "run.state"; ts: number; state: Record<string, unknown> }
     | { type: "run.finished"; ts: number; run_id: string; rating: string | null; elapsed_seconds: number }
     | { type: "run.failed"; ts: number; run_id: string; error: string }

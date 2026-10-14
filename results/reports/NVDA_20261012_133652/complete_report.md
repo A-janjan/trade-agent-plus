@@ -268,4 +268,3 @@ I will move to a 5–6% allocation if the next quarterly report shows Accounts R
 
 **Price Target**: not provided
 **Time Horizon**: 6-12 months
-
