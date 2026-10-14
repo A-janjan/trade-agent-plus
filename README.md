@@ -11,7 +11,7 @@ Four independent analysts gather evidence. Two adversarial debates challenge it.
 </div>
 
 <p align="center">
-  <img src="docs/ui-overview.svg" alt="tradeagents web workspace overview" width="920">
+  <img src="docs/ui-overview.png" alt="tradeagents web workspace overview" width="920">
 </p>
 
 > **Research tool, not an execution system.** `tradeagents` produces a rating, thesis, supporting evidence, and an auditable report trail. It does not route orders, simulate fills, or maintain a live position ledger.
@@ -31,7 +31,7 @@ A run gives you:
 ## How it works
 
 <p align="center">
-  <img src="docs/architecture.svg" alt="tradeagents architecture diagram" width="100%">
+  <img src="docs/architecture.png" alt="tradeagents architecture diagram" width="100%">
 </p>
 
 The pipeline is assembled from registries and shared debate machinery rather than one-off orchestration code:
@@ -136,7 +136,7 @@ The frontend is intentionally a focused research room rather than a generic admi
 - local CSS and inline SVG icons, so the preview does not depend on a CDN or remote font.
 
 <p align="center">
-  <img src="docs/live-run.svg" alt="tradeagents live run workspace" width="920">
+  <img src="docs/live-run.png" alt="tradeagents live run workspace" width="920">
 </p>
 
 The API proxy is server-side. Browser code calls relative `/api/...` URLs; Vite forwards them to `http://localhost:8000` during development. This keeps the hosted preview from trying to reach the browser's own `localhost`.
